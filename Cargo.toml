@@ -1,0 +1,18 @@
+[package]
+name = "gf-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["cryptopatrick <cryptopatrick@gmail.com>"]
+description = "Rust library for working with Grammatical Framework."
+documentation = "https://docs.rs/gf-core"
+homepage = "https://github.com/cryptopatrick/gf-core"
+repository = "https://github.com/cryptopatrick/gf-core"
+readme = "README.md"
+keywords = ["grammar", "gf"]
+license = "Unlicense/MIT"
+autotests = false
+
+[dependencies]
+
+
+
