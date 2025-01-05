@@ -39,28 +39,28 @@ pub enum Production {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Apply {
-    type_: String,
-    fid: i32,
-    args: Vec<PArg>,
+    pub type_: String,
+    pub fid: i32,
+    pub args: Vec<PArg>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Coerce {
-    type_: String,
-    arg: i32,
+    pub type_: String,
+    pub arg: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PArg {
-    type_: String,
-    hypos: Vec<i32>,
-    fid: i32,
+    pub type_: String,
+    pub hypos: Vec<i32>,
+    pub fid: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CncFun {
-    name: String,
-    lins: Vec<i32>,
+    pub name: String,
+    pub lins: Vec<i32>,
 }
 
 #[derive(serde::Serialize, Deserialize, Clone, Debug)]
