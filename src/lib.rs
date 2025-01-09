@@ -312,14 +312,12 @@ impl GFConcrete {
         for (&fid, rules) in &productions {
             for rule in rules {
                 if let Production::Apply(ref apply_rule) = rule {
-                    let fun = &functions[apply_rule.fun];
+                    let fun: &CncFun = &functions[apply_rule.fun];
                     let register = |args: &[PArg],
                                     key: String,
                                     i: usize,
-                                    lproductions: &mut HashMap<
-                        String,
-                        Vec<LProduction>,
-                    >| {
+                                    lproductions: &mut HashMap<String,Vec<LProduction>>| 
+                    {
                         if i < args.len() {
                             let arg = args[i].fid as usize;
                             let mut count = 0;
