@@ -145,8 +145,6 @@ impl GFGrammar {
 /// fun MakeSentence : Noun -> Verb -> Sentence; -- function.
 /// }
 /// ```
-///
-// TODO: add documentation.
 #[derive(Debug, Clone)]
 pub struct GFAbstract {
     pub startcat: String,
