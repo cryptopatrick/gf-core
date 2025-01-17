@@ -16,24 +16,31 @@ use std::fmt;
 /// Constants and type alias
 // We create a type alias to avoid extremely long HashMap types.
 type HMS3 = HashMap<String, HashMap<String, String>>;
+
 /// Every constituent has an unique id. If the constituent is
 /// discontinuous then it will be represented with several brackets
 /// where they all will have the same id.
 pub type FId = i32;
 
 ////////////////////////////////////////////////////////////////////////////////
-// TODO. Simplify.
+// TODO: Explain usage.
 pub struct CompletionAccumulator {
     pub value: Option<Vec<ActiveItem>>,
 }
 
+// TODO: Explain usage.
 pub struct CompletionResult {
     pub consumed: Vec<String>,
     pub suggestions: Vec<String>,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// A Grammatical Framework grammar is one abstract and multiple concretes.
+/// A Grammatical Framework grammar consists of one abstract grammar and
+/// multiple concrete grammars. For example, we could have an abstract grammar
+/// for pizza toppings, expressed in english, and then have two concrete 
+/// grammars - one in french and one in german.
+/// 
+/// cat topping_cheese
 ///
 /// The GFGrammar type is an umbrella type for the two subtypes GFAbstract and
 /// GFConcrete. A GF grammar is made up of an abstract grammar, which define
@@ -106,6 +113,7 @@ impl GFGrammar {
 
         for (c1, concrete) in &from_cncs {
             let trees = concrete.parse_string(input, &self.abstract_.startcat);
+
             if !trees.is_empty() {
                 let mut c1_outputs: HMS3 = HashMap::new();
                 for tree in trees {
@@ -127,7 +135,7 @@ impl GFGrammar {
 
         outputs
     }
-}
+} // GFGrammar
 
 ////////////////////////////////////////////////////////////////////////////////
 /// GFAbstract
@@ -142,7 +150,20 @@ impl GFGrammar {
 /// ```no_run
 /// abstract Lang = {
 /// cat Sentence; -- catebory for a sentence.
-/// fun MakeSentence : Noun -> Verb -> Sentence; -- function.
+/// fun 
+///     MakeSentence : Noun -> Verb -> Sentence;
+/// }
+/// ```
+/// 
+/// ```
+/// abstract MilitaryCommands = {
+/// cat 
+///     Command;
+/// fun
+///     Advance : Command;
+///     Retreat : Command;
+///     Hold : Command;
+///     Attack : Command;
 /// }
 /// ```
 #[derive(Debug, Clone)]
@@ -266,7 +287,7 @@ impl GFAbstract {
             None
         }
     }
-}
+} // GFAbstract
 
 ////////////////////////////////////////////////////////////////////////////////
 /// GFConcrete syntax.
@@ -276,6 +297,8 @@ impl GFAbstract {
 /// It's important to understand that a lineariztion of a GFAbstract does not
 /// have to be in form of natural language, it can be anything from images, to
 /// audio, to button presses in a user interface.
+/// 
+/// `lincat` represents types, while `lin` represents rules for linearisation.    
 ///
 /// # Example
 ///
@@ -285,6 +308,17 @@ impl GFAbstract {
 ///     lin MakeSentence n v = n ++ v;
 /// }
 /// ```
+/// 
+/// ```
+/// concrete MilitaryCommandsEng of MilitaryCommands = {
+/// lincat 
+///     Command = Str;
+/// lin
+///     Advance = "Advance";
+///     Retreat = "Retreat";
+///     Hold = "Hold position";
+///     Attack = "Attack the target";
+/// }
 #[derive(Clone)]
 pub struct GFConcrete {
     pub flags: HashMap<String, String>,
@@ -755,7 +789,7 @@ impl GFConcrete {
 
         CompletionResult { consumed: tokens, suggestions }
     }
-}
+} // GFConcrete
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Abstract Syntax Tree
@@ -874,7 +908,7 @@ impl Fun {
         }
         true
     }
-}
+} // Fun
 
 // Implementing Display trait for Fun for easier printing
 impl fmt::Display for Fun {
@@ -1185,11 +1219,6 @@ impl Alt {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-use crate::GFConcrete;
-use std::collections::HashMap;
-
-// pub type FId = i32;
 
 ///////////////////////////////////////////////////////////////////////////////
 pub struct ParseState {
@@ -1657,7 +1686,7 @@ impl ParseState {
             }
         }
     }
-} //ParseState impl ends.
+} //ParseState
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -1711,7 +1740,7 @@ pub fn production_from_json(json: &serde_json::Value) -> Option<Production> {
                     PArg::new(hypos, fid)
                 })
                 .collect();
-            Some(Production::Apply(Apply { id, fun, args }))
+            Some(Production::Apply(Apply { fid, fun, args }))
         }
         Some("Coerce") => {
             let arg = json["arg"].as_u64().unwrap() as FId;
@@ -2025,7 +2054,7 @@ impl Chart {
 
         rules
     }
-}
+} // Chart
 
 pub type ActiveItemMap = HashMap<i32, Vec<ActiveItem>>;
 
