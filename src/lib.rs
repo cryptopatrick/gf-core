@@ -391,12 +391,12 @@ impl GFConcrete {
         for (&fid, rules) in &productions {
             for rule in rules {
                 if let Production::Apply(ref apply_rule) = rule {
-                    match &apply_rule.fun {
+                    match apply_rule.to_apply_fun() {
                         ApplyFun::FId(fun_id) => {
                             // For FId, we need to find the corresponding function name
                             // This is a simplified approach - in real usage we'd need better mapping
-                            if (*fun_id as usize) < functions.len() {
-                                let fun = &functions[*fun_id as usize];
+                            if (fun_id as usize) < functions.len() {
+                                let fun = &functions[fun_id as usize];
                                 register_recursive(&apply_rule.args, fun.name.clone(), 0, &mut lproductions, &productions, fun, fid, 0);
                             }
                         }
@@ -955,7 +955,7 @@ impl ParseState {
                             let rules = self.chart.expand_forest(fid);
                             for rule in rules {
                                 if let Production::Apply(apply) = rule {
-                                    let runtime_fun = match &apply.fun {
+                                    let runtime_fun = match apply.to_apply_fun() {
                                         ApplyFun::CncFun(fun) => {
                                             // Convert from JSON CncFun to RuntimeCncFun if needed
                                             // For now, assume it's already converted at construction
@@ -1022,7 +1022,12 @@ impl ParseState {
                     let new_fid = self.chart.next_id;
                     self.chart.next_id += 1;
                     self.chart.insert_pc(item.fid, item.lbl, item.offset, new_fid);
-                    self.chart.forest.insert(new_fid, vec![Production::Apply(Apply::new(ApplyFun::CncFun(CncFun::new(item.fun.name.clone(), vec![])), item.args.clone()))]);
+                    let apply = Apply { 
+                        fid: None, 
+                        fun: Some(CncFun::new(item.fun.name.clone(), vec![])), 
+                        args: item.args.clone() 
+                    };
+                    self.chart.forest.insert(new_fid, vec![Production::Apply(apply)]);
                     new_fid
                 });
 
@@ -1065,7 +1070,7 @@ impl ParseState {
                 let rules = chart.expand_forest(fid);
                 for rule in rules {
                     if let Production::Apply(apply) = rule {
-                        match &apply.fun {
+                        match apply.to_apply_fun() {
                             ApplyFun::CncFun(json_fun) => {
                                 // Convert JSON CncFun to RuntimeCncFun
                                 let runtime_fun = RuntimeCncFun::new(
@@ -1085,8 +1090,8 @@ impl ParseState {
                                 ));
                             }
                             ApplyFun::FId(fun_id) => {
-                                if (*fun_id as usize) < concrete.functions.len() {
-                                    let runtime_fun = concrete.functions[*fun_id as usize].clone();
+                                if (fun_id as usize) < concrete.functions.len() {
+                                    let runtime_fun = concrete.functions[fun_id as usize].clone();
                                     match &runtime_fun.lins {
                                         LinType::Sym(lins) => {
                                             for (lbl, lin) in lins.iter().enumerate() {
@@ -1194,7 +1199,7 @@ impl ParseState {
                             let arg_trees: Vec<Vec<Fun>> = a.args.iter().map(|arg| go(arg.fid, total_fids, forest)).collect();
                             let mut indices = vec![0; a.args.len()];
                             loop {
-                                let mut t = Fun::new(a.fun.get_name(), vec![]);
+                                let mut t = Fun::new(a.get_name(), vec![]);
                                 for (k, idx) in indices.iter().enumerate() {
                                     t.args.push(arg_trees[k][*idx].clone());
                                 }
@@ -1233,14 +1238,14 @@ impl ParseState {
                 let mut labels = vec![];
                 for rule in &rules {
                     if let Production::Apply(a) = rule {
-                        match &a.fun {
+                        match a.to_apply_fun() {
                             ApplyFun::CncFun(fun) => {
                                 // JSON CncFun has Vec<i32> lins, each one is an index
                                 labels.extend(0..fun.lins.len() as i32);
                             }
                             ApplyFun::FId(fun_id) => {
-                                if (*fun_id as usize) < self.concrete.functions.len() {
-                                    let runtime_fun = &self.concrete.functions[*fun_id as usize];
+                                if (fun_id as usize) < self.concrete.functions.len() {
+                                    let runtime_fun = &self.concrete.functions[fun_id as usize];
                                     match &runtime_fun.lins {
                                         LinType::Sym(lins) => {
                                             labels.extend(0..lins.len() as i32);
@@ -1421,12 +1426,12 @@ impl Type {
 impl Apply {
     /// Shows the apply rule as string.
     pub fn show(&self, cat: &str) -> String {
-        format!("{} -> {} [{:?}]", cat, self.fun.get_name(), self.args)
+        format!("{} -> {} [{:?}]", cat, self.get_name(), self.args)
     }
 
     /// Checks equality with another apply.
     pub fn is_equal(&self, obj: &Apply) -> bool {
-        self.id == obj.id && self.fun == obj.fun && self.args == obj.args
+        self.fun == obj.fun && self.args == obj.args
     }
 }
 
@@ -1453,7 +1458,7 @@ impl Const {
 
     /// Checks equality with another const.
     pub fn is_equal(&self, obj: &Const) -> bool {
-        self.id == obj.id && self.lit.is_equal(&obj.lit) && self.toks == obj.toks
+        self.lit.is_equal(&obj.lit) && self.toks == obj.toks
     }
 }
 
@@ -1462,6 +1467,7 @@ impl Const {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     /// Test creating a GFGrammar.
     #[test]
@@ -1511,5 +1517,61 @@ mod tests {
         assert!(!tree1.is_equal(&tree3));
     }
 
-    // Add more tests as needed.
+    // Port of TypeScript tests from tests/index.spec.ts
+
+    /// Test importing from JSON (equivalent to TypeScript "imports from JSON" test).
+    #[test]
+    fn test_import_from_json() {
+        let json_content = fs::read_to_string("tests/grammars/Zero.json").expect("Failed to read Zero.json");
+        let json: serde_json::Value = serde_json::from_str(&json_content).expect("Failed to parse JSON");
+        let pgf: PGF = serde_json::from_value(json).expect("Failed to deserialize PGF");
+        let grammar = GFGrammar::from_json(pgf);
+        
+        // Verify grammar was created successfully
+        assert_eq!(grammar.abstract_grammar.startcat, "Utt");
+        assert!(grammar.concretes.contains_key("ZeroEng"));
+        assert!(grammar.concretes.contains_key("ZeroSwe"));
+    }
+
+    /// Test parsing tree (equivalent to TypeScript "parses tree" test).
+    #[test]
+    fn test_parse_tree_from_grammar() {
+        let json_content = fs::read_to_string("tests/grammars/Zero.json").expect("Failed to read Zero.json");
+        let json: serde_json::Value = serde_json::from_str(&json_content).expect("Failed to parse JSON");
+        let pgf: PGF = serde_json::from_value(json).expect("Failed to deserialize PGF");
+        let grammar = GFGrammar::from_json(pgf);
+        
+        let tree = grammar.abstract_grammar.parse_tree("eat apple", None);
+        assert!(tree.is_some(), "Should be able to parse 'eat apple'");
+        let tree = tree.unwrap();
+        assert_eq!(tree.name, "eat");
+        assert_eq!(tree.args.len(), 1);
+        assert_eq!(tree.args[0].name, "apple");
+    }
+
+    /// Test English linearization (equivalent to TypeScript "linearises in English" test).
+    #[test]
+    fn test_linearize_english() {
+        let json_content = fs::read_to_string("tests/grammars/Zero.json").expect("Failed to read Zero.json");
+        let json: serde_json::Value = serde_json::from_str(&json_content).expect("Failed to parse JSON");
+        let pgf: PGF = serde_json::from_value(json).expect("Failed to deserialize PGF");
+        let grammar = GFGrammar::from_json(pgf);
+        
+        let tree = grammar.abstract_grammar.parse_tree("eat apple", None).expect("Failed to parse tree");
+        let linearized = grammar.concretes["ZeroEng"].linearize(&tree);
+        assert_eq!(linearized, "eat an apple");
+    }
+
+    /// Test Swedish linearization (equivalent to TypeScript "linearises in Swedish" test).
+    #[test]
+    fn test_linearize_swedish() {
+        let json_content = fs::read_to_string("tests/grammars/Zero.json").expect("Failed to read Zero.json");
+        let json: serde_json::Value = serde_json::from_str(&json_content).expect("Failed to parse JSON");
+        let pgf: PGF = serde_json::from_value(json).expect("Failed to deserialize PGF");
+        let grammar = GFGrammar::from_json(pgf);
+        
+        let tree = grammar.abstract_grammar.parse_tree("eat apple", None).expect("Failed to parse tree");
+        let linearized = grammar.concretes["ZeroSwe"].linearize(&tree);
+        assert_eq!(linearized, "äta ett äpple");
+    }
 }
