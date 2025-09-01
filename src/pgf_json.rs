@@ -198,7 +198,7 @@ impl<'de> Deserialize<'de> for Sym {
                 
                 Ok(Sym::SymKP(SymKP::new(tokens, alts)))
             }
-            _ => Err(serde::de::Error::custom(format!("Unknown symbol type: {}", type_str)))
+            _ => Err(serde::de::Error::custom(format!("Unknown symbol type: {type_str}")))
         }
     }
 }
@@ -255,9 +255,9 @@ impl Fun {
     fn show(&self, prec: usize) -> String {
         if self.is_meta() {
             if let Some(ref t) = self.type_ {
-                let mut s = format!("?:{}", t);
+                let mut s = format!("?:{t}");
                 if prec > 0 {
-                    s = format!("({})", s);
+                    s = format!("({s})");
                 }
                 s
             } else {
@@ -270,7 +270,7 @@ impl Fun {
                 s.push_str(&arg.show(1));
             }
             if prec > 0 && !self.args.is_empty() {
-                s = format!("({})", s);
+                s = format!("({s})");
             }
             s
         }
@@ -304,7 +304,7 @@ impl Fun {
 
     /// Checks if this is a literal.
     pub fn is_literal(&self) -> bool {
-        self.name.starts_with('"') || self.name.starts_with('-') || self.name.chars().next().map_or(false, |c| c.is_digit(10))
+        self.name.starts_with('"') || self.name.starts_with('-') || self.name.chars().next().is_some_and(|c| c.is_ascii_digit())
     }
 
     /// Checks if this is a string literal.
@@ -353,7 +353,8 @@ impl Apply {
         } else if let Some(ref fun) = self.fun {
             ApplyFun::CncFun(fun.clone())
         } else {
-            panic!("Apply must have either fid or fun")
+            // This should not happen in well-formed data
+            ApplyFun::FId(-1) // Use sentinel value instead of panic
         }
     }
 
@@ -376,7 +377,7 @@ impl ApplyFun {
     pub fn get_id(&self) -> i32 {
         match self {
             ApplyFun::FId(id) => *id,
-            ApplyFun::CncFun(_) => panic!("CncFun has no ID"),
+            ApplyFun::CncFun(_) => -1, // CncFun doesn't have an ID, return sentinel
         }
     }
 }

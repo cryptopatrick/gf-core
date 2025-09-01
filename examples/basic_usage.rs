@@ -1,5 +1,4 @@
 use gf_core::*;
-use std::collections::HashMap;
 use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

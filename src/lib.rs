@@ -25,7 +25,7 @@ pub struct Type {
 /// in GF abstract and concrete syntax.
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Constants and type aliases
+// Constants and type aliases
 
 /// Type alias for nested HashMaps used in translation outputs.
 type HMS3 = HashMap<String, HashMap<String, String>>;
@@ -40,6 +40,12 @@ pub type FId = i32;
 pub struct CompletionAccumulator {
     /// Optional vector of active items for suggestions.
     pub value: Option<Vec<ActiveItem>>,
+}
+
+impl Default for CompletionAccumulator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CompletionAccumulator {
@@ -144,7 +150,7 @@ impl GFGrammar {
             self.concretes.clone()
         };
 
-        for (_c1, concrete) in &from_cncs {
+        for concrete in from_cncs.values() {
             let trees = concrete.parse_string(input, &self.abstract_grammar.startcat);
             if !trees.is_empty() {
                 let mut c1_outputs: HashMap<String, HashMap<String, String>> = HashMap::new();
@@ -241,6 +247,7 @@ impl GFAbstract {
     }
 
     /// Deep copies a tree.
+    #[allow(clippy::only_used_in_recursion)]
     pub fn copy_tree(&self, x: &Fun) -> Fun {
         let mut tree = Fun::new(x.name.clone(), vec![]);
         tree.type_ = x.type_.clone();
@@ -262,14 +269,11 @@ impl GFAbstract {
             .filter(|s| !s.is_empty())
             .collect();
 
-        if let Some(tree) = self.parse_tree_internal(&mut tokens.into_iter(), 0) {
-            Some(self.annotate(tree, r#type))
-        } else {
-            None
-        }
+        self.parse_tree_internal(&mut tokens.into_iter(), 0).map(|tree| self.annotate(tree, r#type))
     }
 
     /// Internal recursive parser for trees.
+    #[allow(clippy::only_used_in_recursion)]
     fn parse_tree_internal<'a, I>(
         &self,
         tokens: &mut I,
@@ -346,6 +350,7 @@ impl GFConcrete {
     ) -> Self {
         let mut lproductions = HashMap::new();
 
+        #[allow(clippy::too_many_arguments)]
         fn register_recursive(
             args: &[PArg], 
             key: String, 
@@ -374,13 +379,13 @@ impl GFConcrete {
                 }
 
                 if count == 0 {
-                    let new_key = format!("{}_{}", key, arg);
+                    let new_key = format!("{key}_{arg}");
                     register_recursive(args, new_key, i + 1, lproductions, productions, fun, fid, depth + 1);
                 }
             } else {
                 lproductions
                     .entry(key)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(LProduction {
                         fun: fun.clone(),
                         fid,
@@ -423,12 +428,7 @@ impl GFConcrete {
     /// Converts from JSON concrete to GFConcrete.
     pub fn from_json(json: Concrete) -> Self {
         let productions: HashMap<i32, Vec<Production>> = json
-            .productions
-            .into_iter()
-            .map(|(k, v)| {
-                (k, v) // Use the productions directly since they're already the right type
-            })
-            .collect();
+            .productions;
 
         let sequences: Vec<Vec<Sym>> = json.sequences;
 
@@ -507,7 +507,7 @@ impl GFConcrete {
             }
         } else {
             let cs: Vec<LinearizedSym> = tree.args.iter().enumerate().map(|(i, arg)| {
-                self.linearize_syms(arg, &format!("{}-{}", tag, i))[0].clone()
+                self.linearize_syms(arg, &format!("{tag}-{i}"))[0].clone()
             }).collect();
 
             let mut key = tree.name.clone();
@@ -681,7 +681,6 @@ impl GFConcrete {
     /// Tokenizes input string by whitespace.
     fn tokenize(&self, input: &str) -> Vec<String> {
         input
-            .trim()
             .split_whitespace()
             .map(String::from)
             .collect()
@@ -704,7 +703,6 @@ impl GFConcrete {
     /// Provides completions for partial input.
     pub fn complete(&self, input: &str, cat: &str) -> CompletionResult {
         let mut tokens: Vec<String> = input
-            .trim()
             .split_whitespace()
             .filter(|t| !t.is_empty())
             .map(|t| t.to_string())
@@ -772,6 +770,12 @@ pub struct Trie<T> {
     items: HashMap<String, Trie<T>>,
 }
 
+impl<T: Clone> Default for Trie<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Clone> Trie<T> {
     /// Creates a new trie.
     pub fn new() -> Self {
@@ -782,7 +786,7 @@ impl<T: Clone> Trie<T> {
     pub fn insert_chain(&mut self, keys: &[String], obj: Vec<T>) {
         let mut node = self;
         for key in keys {
-            node = node.items.entry(key.clone()).or_insert_with(Trie::new);
+            node = node.items.entry(key.clone()).or_default();
         }
         node.value = Some(obj);
     }
@@ -791,7 +795,7 @@ impl<T: Clone> Trie<T> {
     pub fn insert_chain1(&mut self, keys: &[String], obj: T) {
         let mut node = self;
         for key in keys {
-            node = node.items.entry(key.clone()).or_insert_with(Trie::new);
+            node = node.items.entry(key.clone()).or_default();
         }
         if let Some(value) = &mut node.value {
             value.push(obj);
@@ -867,18 +871,18 @@ impl Chart {
 
     /// Inserts active items.
     pub fn insert_ac(&mut self, fid: FId, label: i32, items: Vec<ActiveItem>) {
-        self.active.entry(fid).or_insert_with(HashMap::new).insert(label, items);
+        self.active.entry(fid).or_default().insert(label, items);
     }
 
     /// Looks up passive FId.
     pub fn lookup_pc(&self, fid: FId, label: i32, offset: usize) -> Option<FId> {
-        let key = format!("{}.{}-{}", fid, label, offset);
+        let key = format!("{fid}.{label}-{offset}");
         self.passive.get(&key).cloned()
     }
 
     /// Inserts passive FId.
     pub fn insert_pc(&mut self, fid: FId, label: i32, offset: usize, fid2: FId) {
-        let key = format!("{}.{}-{}", fid, label, offset);
+        let key = format!("{fid}.{label}-{offset}");
         self.passive.insert(key, fid2);
     }
 
@@ -969,8 +973,8 @@ impl ParseState {
                                     
                                     let seq = match &runtime_fun.lins {
                                         LinType::Sym(syms) => {
-                                            if (*label as usize) < syms.len() {
-                                                syms[*label as usize].clone()
+                                            if *label < syms.len() {
+                                                syms[*label].clone()
                                             } else {
                                                 vec![]
                                             }
@@ -1006,7 +1010,7 @@ impl ParseState {
                     Sym::SymLit { i, .. } => {
                         let fid = item.args[*i].fid;
                         if let Some(rules) = self.chart.forest.get(&fid) {
-                            if let Some(Production::Const(const_rule)) = rules.get(0) {
+                            if let Some(Production::Const(const_rule)) = rules.first() {
                                 token_callback(&const_rule.toks, item.shift_over_token());
                             }
                         } else if let Some(rule) = literal_callback(fid) {
@@ -1141,7 +1145,7 @@ impl ParseState {
             &mut agenda,
             |fid| {
                 match fid {
-                    -1 => Some(Const::new(Fun::new(format!("\"{}\"", token), vec![]), vec![token.to_string()])),
+                    -1 => Some(Const::new(Fun::new(format!("\"{token}\""), vec![]), vec![token.to_string()])),
                     -2 if token.parse::<i32>().is_ok() => Some(Const::new(Fun::new(token.to_string(), vec![]), vec![token.to_string()])),
                     -3 if token.parse::<f64>().is_ok() => Some(Const::new(Fun::new(token.to_string(), vec![]), vec![token.to_string()])),
                     _ => None,
@@ -1172,7 +1176,7 @@ impl ParseState {
             &mut agenda,
             |_| None,
             |tokens, item| {
-                if current_token.is_empty() || tokens.first().map_or(false, |t| t.starts_with(current_token)) {
+                if current_token.is_empty() || tokens.first().is_some_and(|t| t.starts_with(current_token)) {
                     let tokens1 = tokens[1..].to_vec();
                     acc.insert_chain1(&tokens1, item);
                 }

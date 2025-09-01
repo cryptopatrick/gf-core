@@ -1,5 +1,4 @@
 use gf_core::*;
-use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
 
@@ -51,8 +50,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             for (source_idx, translation_map) in translations.iter().enumerate() {
                 println!("Source parse {}:", source_idx + 1);
                 
-                for (tree_str, target_map) in translation_map {
-                    println!("  Abstract tree: {}", tree_str);
+                for (_tree_str, target_map) in translation_map {
+                    println!("  Abstract tree: {}", _tree_str);
                     
                     for (lang_code, translation) in target_map {
                         println!("    {}: {}", lang_code, translation);
@@ -67,7 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         
         if !eng_to_swe.is_empty() {
             for translation_map in &eng_to_swe {
-                for (tree_str, target_map) in translation_map {
+                for (_tree_str, target_map) in translation_map {
                     if let Some(swedish) = target_map.get("ZeroSwe") {
                         println!("EN→SV: {} → {}", input, swedish);
                     }
