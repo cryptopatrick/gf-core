@@ -51,7 +51,7 @@ pub enum Production {
 pub struct Apply {
     #[serde(default)]
     pub fid: Option<i32>,
-    #[serde(default)]  
+    #[serde(default)]
     pub fun: Option<CncFun>,
     pub args: Vec<PArg>,
 }
@@ -109,73 +109,107 @@ impl<'de> Deserialize<'de> for Sym {
     {
         use serde_json::Value;
         let value: Value = Deserialize::deserialize(deserializer)?;
-        
-        let type_str = value["type"].as_str().ok_or_else(|| {
-            serde::de::Error::missing_field("type")
-        })?;
-        
+
+        let type_str = value["type"]
+            .as_str()
+            .ok_or_else(|| serde::de::Error::missing_field("type"))?;
+
         match type_str {
             "SymCat" => {
-                let args = value["args"].as_array().ok_or_else(|| {
-                    serde::de::Error::missing_field("args")
-                })?;
+                let args = value["args"]
+                    .as_array()
+                    .ok_or_else(|| serde::de::Error::missing_field("args"))?;
                 if args.len() != 2 {
-                    return Err(serde::de::Error::custom("SymCat args must have 2 elements"));
+                    return Err(serde::de::Error::custom(
+                        "SymCat args must have 2 elements",
+                    ));
                 }
                 let i = args[0].as_u64().unwrap_or(0) as usize;
                 let label = args[1].as_u64().unwrap_or(0) as usize;
                 Ok(Sym::SymCat { i, label })
             }
             "SymLit" => {
-                let args = value["args"].as_array().ok_or_else(|| {
-                    serde::de::Error::missing_field("args")
-                })?;
+                let args = value["args"]
+                    .as_array()
+                    .ok_or_else(|| serde::de::Error::missing_field("args"))?;
                 if args.len() != 2 {
-                    return Err(serde::de::Error::custom("SymLit args must have 2 elements"));
+                    return Err(serde::de::Error::custom(
+                        "SymLit args must have 2 elements",
+                    ));
                 }
                 let i = args[0].as_u64().unwrap_or(0) as usize;
                 let label = args[1].as_u64().unwrap_or(0) as usize;
                 Ok(Sym::SymLit { i, label })
             }
             "SymKS" => {
-                let args = value["args"].as_array().ok_or_else(|| {
-                    serde::de::Error::missing_field("args")
-                })?;
-                let tokens: Vec<String> = args.iter()
+                let args = value["args"]
+                    .as_array()
+                    .ok_or_else(|| serde::de::Error::missing_field("args"))?;
+                let tokens: Vec<String> = args
+                    .iter()
                     .map(|v| v.as_str().unwrap_or("").to_string())
                     .collect();
                 Ok(Sym::SymKS(SymKS::new(tokens)))
             }
             "SymKP" => {
                 // SymKP is more complex - it has nested structure
-                let args = value["args"].as_array().ok_or_else(|| {
-                    serde::de::Error::missing_field("args")
-                })?;
-                
+                let args = value["args"]
+                    .as_array()
+                    .ok_or_else(|| serde::de::Error::missing_field("args"))?;
+
                 let mut tokens = Vec::new();
                 let mut alts = Vec::new();
-                
+
                 // Parse the nested structure
                 for arg_group in args {
                     if let Some(arr) = arg_group.as_array() {
                         for item in arr {
                             if let Some(obj) = item.as_object() {
-                                if obj.get("type").and_then(|v| v.as_str()) == Some("SymKS") {
-                                    if let Some(item_args) = obj.get("args").and_then(|v| v.as_array()) {
-                                        let item_tokens: Vec<String> = item_args.iter()
-                                            .map(|v| v.as_str().unwrap_or("").to_string())
-                                            .collect();
+                                if obj.get("type").and_then(|v| v.as_str())
+                                    == Some("SymKS")
+                                {
+                                    if let Some(item_args) = obj
+                                        .get("args")
+                                        .and_then(|v| v.as_array())
+                                    {
+                                        let item_tokens: Vec<String> =
+                                            item_args
+                                                .iter()
+                                                .map(|v| {
+                                                    v.as_str()
+                                                        .unwrap_or("")
+                                                        .to_string()
+                                                })
+                                                .collect();
                                         tokens.push(SymKS::new(item_tokens));
                                     }
-                                } else if obj.get("type").and_then(|v| v.as_str()) == Some("Alt") {
-                                    if let Some(alt_args) = obj.get("args").and_then(|v| v.as_array()) {
+                                } else if obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    == Some("Alt")
+                                {
+                                    if let Some(alt_args) = obj
+                                        .get("args")
+                                        .and_then(|v| v.as_array())
+                                    {
                                         if alt_args.len() >= 2 {
                                             // First element is tokens array, second is prefixes
                                             let mut alt_tokens = Vec::new();
-                                            if let Some(tokens_arr) = alt_args[0].as_array() {
+                                            if let Some(tokens_arr) =
+                                                alt_args[0].as_array()
+                                            {
                                                 for token_item in tokens_arr {
-                                                    if let Some(token_obj) = token_item.as_object() {
-                                                        if let Some(token_args) = token_obj.get("args").and_then(|v| v.as_array()) {
+                                                    if let Some(token_obj) =
+                                                        token_item.as_object()
+                                                    {
+                                                        if let Some(
+                                                            token_args,
+                                                        ) = token_obj
+                                                            .get("args")
+                                                            .and_then(|v| {
+                                                                v.as_array()
+                                                            })
+                                                        {
                                                             let item_tokens: Vec<String> = token_args.iter()
                                                                 .map(|v| v.as_str().unwrap_or("").to_string())
                                                                 .collect();
@@ -184,10 +218,25 @@ impl<'de> Deserialize<'de> for Sym {
                                                     }
                                                 }
                                             }
-                                            let prefixes: Vec<String> = alt_args[1].as_array()
-                                                .map(|arr| arr.iter().map(|v| v.as_str().unwrap_or("").to_string()).collect())
-                                                .unwrap_or_default();
-                                            alts.push(Alt::new(alt_tokens, prefixes));
+                                            let prefixes: Vec<String> =
+                                                alt_args[1]
+                                                    .as_array()
+                                                    .map(|arr| {
+                                                        arr.iter()
+                                                            .map(|v| {
+                                                                v.as_str()
+                                                                    .unwrap_or(
+                                                                        "",
+                                                                    )
+                                                                    .to_string(
+                                                                    )
+                                                            })
+                                                            .collect()
+                                                    })
+                                                    .unwrap_or_default();
+                                            alts.push(Alt::new(
+                                                alt_tokens, prefixes,
+                                            ));
                                         }
                                     }
                                 }
@@ -195,10 +244,12 @@ impl<'de> Deserialize<'de> for Sym {
                         }
                     }
                 }
-                
+
                 Ok(Sym::SymKP(SymKP::new(tokens, alts)))
             }
-            _ => Err(serde::de::Error::custom(format!("Unknown symbol type: {type_str}")))
+            _ => Err(serde::de::Error::custom(format!(
+                "Unknown symbol type: {type_str}"
+            ))),
         }
     }
 }
@@ -304,7 +355,9 @@ impl Fun {
 
     /// Checks if this is a literal.
     pub fn is_literal(&self) -> bool {
-        self.name.starts_with('"') || self.name.starts_with('-') || self.name.chars().next().is_some_and(|c| c.is_ascii_digit())
+        self.name.starts_with('"')
+            || self.name.starts_with('-')
+            || self.name.chars().next().is_some_and(|c| c.is_ascii_digit())
     }
 
     /// Checks if this is a string literal.
@@ -319,7 +372,9 @@ impl Fun {
 
     /// Checks if this is a float literal.
     pub fn is_float(&self) -> bool {
-        self.name.parse::<f64>().is_ok() && self.name != "." && self.name != "-."
+        self.name.parse::<f64>().is_ok()
+            && self.name != "."
+            && self.name != "-."
     }
 
     /// Checks equality with another tree.
@@ -342,7 +397,9 @@ impl Apply {
     pub fn new(fun: ApplyFun, args: Vec<PArg>) -> Self {
         match fun {
             ApplyFun::FId(id) => Apply { fid: Some(id), fun: None, args },
-            ApplyFun::CncFun(cnc_fun) => Apply { fid: None, fun: Some(cnc_fun), args },
+            ApplyFun::CncFun(cnc_fun) => {
+                Apply { fid: None, fun: Some(cnc_fun), args }
+            }
         }
     }
 
@@ -409,7 +466,11 @@ impl SymKS {
 
     /// Tags the symbol.
     pub fn tag_with(&self, tag: &str) -> SymKS {
-        SymKS { id: self.id.clone(), tokens: self.tokens.clone(), tag: Some(tag.to_string()) }
+        SymKS {
+            id: self.id.clone(),
+            tokens: self.tokens.clone(),
+            tag: Some(tag.to_string()),
+        }
     }
 }
 
@@ -426,7 +487,12 @@ impl SymKP {
 
     /// Tags the phrase.
     pub fn tag_with(&self, tag: &str) -> SymKP {
-        SymKP { id: self.id.clone(), tokens: self.tokens.clone(), alts: self.alts.clone(), tag: Some(tag.to_string()) }
+        SymKP {
+            id: self.id.clone(),
+            tokens: self.tokens.clone(),
+            alts: self.alts.clone(),
+            tag: Some(tag.to_string()),
+        }
     }
 }
 
