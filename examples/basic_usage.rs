@@ -13,19 +13,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse an abstract syntax tree from string
     let tree = grammar
         .abstract_grammar
+        // .parse_tree("eat apple", None)
         .parse_tree("eat apple", None)
         .expect("Failed to parse tree");
 
-    println!("Parsed tree: {}", tree.print());
+    println!("Parsed AST tree: {}", tree.print());
 
     // Linearize the tree in English
     if let Some(eng_concrete) = grammar.concretes.get("ZeroEng") {
+    // if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
         let english_output = eng_concrete.linearize(&tree);
         println!("English: {}", english_output);
     }
 
     // Linearize the tree in Swedish
     if let Some(swe_concrete) = grammar.concretes.get("ZeroSwe") {
+    // if let Some(swe_concrete) = grammar.concretes.get("HelloFre") {
         let swedish_output = swe_concrete.linearize(&tree);
         println!("Swedish: {}", swedish_output);
     }
