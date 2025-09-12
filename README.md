@@ -50,95 +50,48 @@ concrete HelloEng of Hello = {
     }
 ```
 
-### Concrete Finnish Grammar File: HelloFre.gf
+### Concrete Finnish Grammar File: HelloIta.gf
 
 ```haskell
-  concrete HelloFre of Hello = {
-    lincat Greeting, Recipient = {s : Str} ;
+concrete HelloIta of Hello = {
+      lincat Greeting, Recipient = {s : Str} ;
+      lin
+        Hello recip = {s = "ciao" ++ recip.s} ;
+        World = {s = "mondo"} ;
+        Mum = {s = "mamma"} ;
+        Friends = {s = "amici"} ;
+    }
 
-    lin
-      Hello recip = {s = "bonjour" ++ recip.s} ;
-      World = {s = "le monde"} ;
-      Mum = {s = "maman"} ;
-      Friends = {s = "les amis"} ;
-  }
 ```
 
-## Step 02: Compile the grammars
-Once we have our grammars written, we need to compile them. We do so using the GF
-compiler, and choose JSON as the output format.
-Usage with PGF JSON (recommended)
-You need to compile them into PGF (Portable Grammar Format), which is GF’s binary format:
+## Step 02: Compile the grammars into PGF
+Once we have our grammars written, we need to compile them into PGF (Portable Grammar Format).
+To do this, we need the GF CLI, which is part of the GF binary.
 
 > The GF binary and cli can be downloaded from [this page](https://github.com/GrammaticalFramework/gf-core/releases/tag/release-3.12)
 
 ```
-# json output requires a GF version of 3.10, or later.
-% echo "l Hello World" | gf HelloEng.gf HelloFin.gf HelloIta.gf
-gf --make helloEng.gf helloFre.gf 
+# Compile the grammar into Hello.pgf
+gf -make HelloEng.gf HelloIta.gf
 ```
-Running this command, GF will look at `hello.gf` (since it's what the concrete syntaxes depend on) and then produce the PGF file: `hello.pgf`.
+Running this command, GF will look at `Hello.gf` (since it's what the concrete syntaxes depend on) and then produce the PGF file: `Hello.pgf`.
 
 ### Step 03: Generate JSON
-Once we have our grammar in `.pgf` format, we can use it to generate a json version.
+Next, we need to convert the `Hello.pgf` file into JSON format. We can do that __using 
+a tool provided by GF framework called `pgf2json`.
 
 ```shell
-echo "hello_world.json" | gf --run hello.pgf --output-format=json
+
+```haskell
+# Translate Hello.pgf into Hello.json format
+gf --run Hello.pgf <<< ":i --format=json" > Hello.json
 ```
-
-
-### Automatically export all funccitons to export_json.sh
-
-```shell
-#!/bin/bash
-set -e
-
-# Compile the grammars
-gf --make helloEng.gf helloFre.gf
-
-PGF="hello.pgf"
-LANGS=("Eng" "Fre")
-
-# Get list of all functions in the grammar
-FUNCS=($(gf --functions "$PGF"))
-
-echo '{'
-
-first_func=true
-for f in "${FUNCS[@]}"; do
-  if [ "$first_func" = false ]; then
-    echo ','
-  fi
-  first_func=false
-
-  echo -n "  \"$f\": {"
-
-  first_lang=true
-  for l in "${LANGS[@]}"; do
-    if [ "$first_lang" = false ]; then
-      echo -n ','
-    fi
-    first_lang=false
-
-    echo -n "\"$l\":"
-    echo "linearize -lang=$l $f" | gf --run --output-format=json "$PGF" | tr -d '\n'
-  done
-
-  echo -n "}"
-done
-
-echo
-echo '}'
+echo "hello_world.json" | gf --run Hello.pgf --output-format=json
 ```
-
-```shell
-# Run the script and store the result in a file.
-./export_json.sh > results.json
-```
+It's this generated json file (hello_world.json) that we can use in our Rust programs (see below).
 
 
-
-## Step 03: Use the compiled grammar in code
+## Step 04: Use the compiled grammar in code
 
 ```rust
 use gf_core::*;
@@ -146,7 +99,7 @@ use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load a PGF grammar from JSON file
-    let json_content = fs::read_to_string("<path-to-grammar-files.json>")?;
+    let json_content = fs::read_to_string("tests/grammars/Zero.json")?;
     let json: serde_json::Value = serde_json::from_str(&json_content)?;
     let pgf: PGF = serde_json::from_value(json)?;
 
@@ -156,21 +109,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse an abstract syntax tree from string
     let tree = grammar
         .abstract_grammar
+        // .parse_tree("eat apple", None)
         .parse_tree("eat apple", None)
         .expect("Failed to parse tree");
 
-    println!("Parsed tree: {}", tree.print());
+    println!("Parsed AST tree: {}", tree.print());
 
     // Linearize the tree in English
-    if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
+    if let Some(eng_concrete) = grammar.concretes.get("ZeroEng") {
+    // if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
         let english_output = eng_concrete.linearize(&tree);
         println!("English: {}", english_output);
     }
 
     // Linearize the tree in Swedish
-    if let Some(fre_concrete) = grammar.concretes.get("HelloFre") {
-        let french_output = fre_concrete.linearize(&tree);
-        println!("French: {}", french_output);
+    if let Some(swe_concrete) = grammar.concretes.get("ZeroSwe") {
+    // if let Some(swe_concrete) = grammar.concretes.get("HelloFre") {
+        let swedish_output = swe_concrete.linearize(&tree);
+        println!("Swedish: {}", swedish_output);
     }
 
     Ok(())

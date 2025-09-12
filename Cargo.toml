@@ -1,20 +1,20 @@
 [package]
 name = "gf-core"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["CryptoPatrick <cryptopatrick@gmail.com>"]
 description = """
-Rust crate for working with Grammatical Framework.
+Rust runtime for Grammatical Framework.
 """
 documentation = "https://docs.rs/gf-core"
 homepage = "https://github.com/cryptopatrick/gf-core"
 repository = "https://github.com/cryptopatrick/gf-core"
 keywords = ["grammar", "gf"]
 categories = ["natural-language"]
-license = "Unlicense OR MIT"
+license = "MIT"
 exclude = ["/.github/"]
 autotests = false
 edition = "2021"
-rust-version = "1.72"
+rust-version = "1.88"
 
 [dependencies]
 regex = "1.11.1"

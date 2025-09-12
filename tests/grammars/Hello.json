@@ -1,1 +1,0 @@
-{"abstract":{"name":"Hello","startcat":"Greeting","funs":{"Friends":{"args":[],"cat":"Recipient"},"Hello":{"args":["Recipient"],"cat":"Greeting"},"Mum":{"args":[],"cat":"Recipient"},"World":{"args":[],"cat":"Recipient"}}},"concretes":{}}

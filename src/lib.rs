@@ -1,9 +1,13 @@
 mod pgf_json;
+// mod parser;
+
 pub use pgf_json::*;
+// pub use parser::*;
 
 use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::io::{Cursor};
 
 #[derive(Serialize, Debug, Clone)]
 pub struct Type {
@@ -12,6 +16,11 @@ pub struct Type {
     /// Output category (result) for the function type.
     pub cat: String,
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Parser Module Start
+
+// Parser Module Stop
 
 /// Rust Runtime for Grammatical Framework
 ///
@@ -216,6 +225,25 @@ impl GFGrammar {
 
         outputs
     }
+
+    // Parser using the parser module
+    // TODO: Uncomment when parser module is fixed
+    /*
+    pub fn from_binary(data: &[u8]) -> Self {
+        let mut r = Cursor::new(data);
+        let major = read_int16(&mut r);
+        let minor = read_int16(&mut r);
+        if major != 1 || minor != 0 {
+            panic!("Unsupported PGF version {}:{}", major, minor);
+        }
+        let _flags = read_list(&mut r, read_flag); // Global flags, ignored
+        let abstract_ = read_abstract(&mut r);
+        let concretes_list = read_list(&mut r, read_concrete);
+        let concretes: HashMap<String, Concrete> = concretes_list.into_iter().map(|c| (c.name.clone(), c)).collect();
+        let pgf = PGF { abstract_, concretes };
+        Self::from_json(pgf)
+    }
+    */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
