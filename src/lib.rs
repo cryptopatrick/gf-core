@@ -340,6 +340,150 @@ pub struct GFAbstract {
     types: HashMap<String, Type>,
 }
 
+/// Parser for abstract syntax expressions.
+///
+/// Handles function call syntax like `Function(Arg1, Arg2)` and nested expressions.
+struct AbstractSyntaxParser {
+    input: Vec<char>,
+    position: usize,
+}
+
+impl AbstractSyntaxParser {
+    fn new(input: &str) -> Self {
+        Self {
+            input: input.chars().collect(),
+            position: 0,
+        }
+    }
+
+    fn current_char(&self) -> Option<char> {
+        self.input.get(self.position).copied()
+    }
+
+    fn advance(&mut self) -> Option<char> {
+        let ch = self.current_char();
+        self.position += 1;
+        ch
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(ch) = self.current_char() {
+            if ch.is_whitespace() {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn parse_identifier(&mut self) -> Result<String, &'static str> {
+        let mut result = String::new();
+        
+        while let Some(ch) = self.current_char() {
+            if ch.is_alphanumeric() || ch == '_' || ch == '?' || ch == '\'' || ch == '"' {
+                result.push(ch);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        if result.is_empty() {
+            Err("Expected identifier")
+        } else {
+            Ok(result)
+        }
+    }
+
+    fn parse_arguments(&mut self) -> Result<Vec<Fun>, &'static str> {
+        let mut args = Vec::new();
+
+        // Expect opening parenthesis
+        if self.current_char() != Some('(') {
+            return Err("Expected '('");
+        }
+        self.advance(); // consume '('
+
+        self.skip_whitespace();
+
+        // Handle empty argument list
+        if self.current_char() == Some(')') {
+            self.advance(); // consume ')'
+            return Ok(args);
+        }
+
+        loop {
+            self.skip_whitespace();
+            args.push(self.parse_expression()?);
+            self.skip_whitespace();
+
+            match self.current_char() {
+                Some(',') => {
+                    self.advance(); // consume ','
+                    continue;
+                }
+                Some(')') => {
+                    self.advance(); // consume ')'
+                    break;
+                }
+                _ => return Err("Expected ',' or ')'"),
+            }
+        }
+
+        Ok(args)
+    }
+
+    fn parse_expression(&mut self) -> Result<Fun, &'static str> {
+        self.skip_whitespace();
+
+        let name = self.parse_identifier()?;
+        
+        // Check if there's whitespace before the next '('
+        let has_space_before_paren = self.current_char().map(|c| c.is_whitespace()).unwrap_or(false);
+        self.skip_whitespace();
+
+        // Check if this is a function call with parentheses: Function(Arg1, Arg2)
+        // vs space-separated args: Function (Arg1) (Arg2)
+        // The key difference: function calls have no space before the '('
+        if self.current_char() == Some('(') && !has_space_before_paren {
+            let args = self.parse_arguments()?;
+            Ok(Fun::new(name, args))
+        } else {
+            // Check for space-separated arguments like "MakeS (NP) (VP)"
+            let mut args = Vec::new();
+            
+            while self.current_char() == Some('(') {
+                self.advance(); // consume '('
+                self.skip_whitespace();
+                let arg_name = self.parse_identifier()?;
+                self.skip_whitespace();
+                if self.current_char() != Some(')') {
+                    return Err("Expected ')'");
+                }
+                self.advance(); // consume ')'
+                self.skip_whitespace();
+                
+                args.push(Fun::new(arg_name, vec![]));
+            }
+            
+            // If no parenthesized args, check for space-separated identifiers (like "hello world")
+            if args.is_empty() {
+                while let Some(ch) = self.current_char() {
+                    if ch.is_alphanumeric() || ch == '_' || ch == '?' {
+                        let arg_name = self.parse_identifier()?;
+                        args.push(Fun::new(arg_name, vec![]));
+                        self.skip_whitespace();
+                    } else {
+                        break;
+                    }
+                }
+            }
+            
+            Ok(Fun::new(name, args))
+        }
+    }
+}
+
 impl GFAbstract {
     /// Creates a new abstract grammar.
     ///
@@ -557,49 +701,10 @@ impl GFAbstract {
         str: &str,
         r#type: Option<&String>,
     ) -> Option<Fun> {
-        let tokens: Vec<&str> = str
-            .split_whitespace()
-            .flat_map(|s| s.split(|c| "()?:".contains(c)))
-            .filter(|s| !s.is_empty())
-            .collect();
-
-        self.parse_tree_internal(&mut tokens.into_iter(), 0)
-            .map(|tree| self.annotate(tree, r#type))
-    }
-
-    /// Internal recursive parser for trees.
-    ///
-    /// Parses tokens into a tree structure, handling parentheses and meta variables.
-    #[allow(clippy::only_used_in_recursion)]
-    fn parse_tree_internal<'a, I>(
-        &self,
-        tokens: &mut I,
-        _prec: usize,
-    ) -> Option<Fun>
-    where
-        I: Iterator<Item = &'a str>,
-    {
-        if let Some(t) = tokens.next() {
-            if t == "(" {
-                let tree = self.parse_tree_internal(tokens, 0)?;
-                if tokens.next() != Some(")") {
-                    return None; // Mismatched parenthesis
-                }
-                Some(tree)
-            } else if t == "?" {
-                Some(Fun::new("?".to_string(), vec![]))
-            } else {
-                let mut tree = Fun::new(t.to_string(), vec![]);
-                // Only parse arguments if precedence is 0 (top level)
-                if _prec == 0 {
-                    while let Some(arg) = self.parse_tree_internal(tokens, 1) {
-                        tree.args.push(arg);
-                    }
-                }
-                Some(tree)
-            }
-        } else {
-            None
+        let mut parser = AbstractSyntaxParser::new(str);
+        match parser.parse_expression() {
+            Ok(tree) => Some(self.annotate(tree, r#type)),
+            Err(_) => None,
         }
     }
 }
