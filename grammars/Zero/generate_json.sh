@@ -1,0 +1,1 @@
+gf --make --output-format=json ZeroEng.gf ZeroSwe.gf

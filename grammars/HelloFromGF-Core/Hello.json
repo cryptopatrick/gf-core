@@ -1,0 +1,39 @@
+{
+  "abstract": {
+    "funs": {
+      "Friends": {
+        "args": [],
+        "arity": 0,
+        "cat": "Recipient",
+        "is_constructor": false,
+        "prob": 0.3333333333333333
+      },
+      "Hello": {
+        "args": [
+          "Recipient"
+        ],
+        "arity": 0,
+        "cat": "Greeting",
+        "is_constructor": false,
+        "prob": 1.0
+      },
+      "Mum": {
+        "args": [],
+        "arity": 0,
+        "cat": "Recipient",
+        "is_constructor": false,
+        "prob": 0.3333333333333333
+      },
+      "World": {
+        "args": [],
+        "arity": 0,
+        "cat": "Recipient",
+        "is_constructor": false,
+        "prob": 0.3333333333333333
+      }
+    },
+    "name": "World",
+    "startcat": "Recipient"
+  },
+  "concretes": {}
+}

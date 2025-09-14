@@ -1,0 +1,41 @@
+{
+  "languages": [
+    "HelloEng",
+    "HelloIta"
+  ],
+  "startcat": "Greeting",
+  "categories": [
+    "Float",
+    "Greeting",
+    "Int",
+    "Recipient",
+    "String"
+  ],
+  "functions": [
+    "Friends",
+    "Hello",
+    "Mum",
+    "World"
+  ],
+  "lincats": {
+    "Float": "<error: 'pgf.Concr' object has no attribute 'lookupType'>",
+    "Greeting": "<error: 'pgf.Concr' object has no attribute 'lookupType'>",
+    "Int": "<error: 'pgf.Concr' object has no attribute 'lookupType'>",
+    "Recipient": "<error: 'pgf.Concr' object has no attribute 'lookupType'>",
+    "String": "<error: 'pgf.Concr' object has no attribute 'lookupType'>"
+  },
+  "linearizations": {
+    "HelloEng": {
+      "Friends": "friends",
+      "Hello": "hello <Recipient>",
+      "Mum": "mum",
+      "World": "world"
+    },
+    "HelloIta": {
+      "Friends": "amici",
+      "Hello": "ciao <Recipient>",
+      "Mum": "mamma",
+      "World": "mondo"
+    }
+  }
+}

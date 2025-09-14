@@ -1,0 +1,20 @@
+{
+  "languages": [
+    "MoviesEng",
+    "MoviesFre"
+  ],
+  "functions": [
+    "ActionMovie",
+    "DetA",
+    "DetThe",
+    "Film",
+    "I_Pron",
+    "John",
+    "Mary",
+    "Movie",
+    "Pred",
+    "Recommends",
+    "UseDet",
+    "Watches"
+  ]
+}

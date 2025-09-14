@@ -3,7 +3,7 @@ use std::fs;
 use std::io::{self, Write};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let json_content = fs::read_to_string("tests/grammars/Zero.json")?;
+    let json_content = fs::read_to_string("grammars/Hello/Hello.json")?;
     let json: serde_json::Value = serde_json::from_str(&json_content)?;
     let pgf: PGF = serde_json::from_value(json)?;
     let grammar = GFGrammar::from_json(pgf);
@@ -72,12 +72,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Demonstrate specific language pair translation
         println!("\n--- English to Swedish Translation ---");
         let eng_to_swe =
-            grammar.translate(input, Some("ZeroEng"), Some("ZeroSwe"));
+            grammar.translate(input, Some("HelloEng"), Some("HelloFre"));
 
         if !eng_to_swe.is_empty() {
             for translation_map in &eng_to_swe {
                 for (_tree_str, target_map) in translation_map {
-                    if let Some(swedish) = target_map.get("ZeroSwe") {
+                    if let Some(swedish) = target_map.get("HelloFre") {
                         println!("EN→SV: {} → {}", input, swedish);
                     }
                 }

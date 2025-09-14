@@ -1,0 +1,79 @@
+{
+  "abstract": {
+    "funs": {
+      "Pred": {
+        "args": [],
+        "arity": 0,
+        "cat": "Comment",
+        "is_constructor": true,
+        "prob": 1.0
+      },
+      "This": {
+        "args": [],
+        "arity": 0,
+        "cat": "Item",
+        "is_constructor": true,
+        "prob": 1.0
+      }
+    },
+    "name": "Food",
+    "startcat": "Comment"
+  },
+  "concretes": {
+    "FoodEng": {
+      "categories": {
+        "Comment": {
+          "end": 1,
+          "labels": [
+            "C1"
+          ],
+          "start": 0
+        },
+        "Item": {
+          "end": 2,
+          "labels": [
+            "I1"
+          ],
+          "start": 1
+        }
+      },
+      "flags": {},
+      "functions": [
+        {
+          "lins": [
+            0
+          ],
+          "name": "Pred"
+        },
+        {
+          "lins": [
+            1
+          ],
+          "name": "This"
+        }
+      ],
+      "lindefs": [],
+      "printnames": [],
+      "productions": {},
+      "sequences": [
+        [
+          {
+            "args": [
+              "is"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "this"
+            ],
+            "type": "SymKS"
+          }
+        ]
+      ],
+      "totalfids": 2
+    }
+  }
+}

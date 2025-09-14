@@ -2,19 +2,19 @@ use gf_core::*;
 use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let json_content = fs::read_to_string("tests/grammars/Zero.json")?;
+    let json_content = fs::read_to_string("grammars/Hello/Hello.json")?;
     let json: serde_json::Value = serde_json::from_str(&json_content)?;
     let pgf: PGF = serde_json::from_value(json)?;
     let grammar = GFGrammar::from_json(pgf);
 
     // Parse multiple sentences and show all possible trees
-    let sentences = vec!["eat apple", "drink water"];
+    let sentences = vec!["hello world", "drink water"];
 
     for sentence in sentences {
         println!("\n=== Parsing: '{}' ===", sentence);
 
         // Parse with English concrete
-        if let Some(eng_concrete) = grammar.concretes.get("ZeroEng") {
+        if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
             let trees = eng_concrete
                 .parse_string(sentence, &grammar.abstract_grammar.startcat);
 
@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("    English: {}", eng_output);
 
                     if let Some(swe_concrete) =
-                        grammar.concretes.get("ZeroSwe")
+                        grammar.concretes.get("HelloFre")
                     {
                         let swe_output = swe_concrete.linearize(tree);
                         println!("    Swedish: {}", swe_output);
@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Demonstrate completion functionality
     println!("\n=== Completion Demo ===");
-    if let Some(eng_concrete) = grammar.concretes.get("ZeroEng") {
+    if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
         let partial_inputs = vec!["ea", "drink", ""];
 
         for partial in partial_inputs {

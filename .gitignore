@@ -1,5 +1,9 @@
-/target
-/_wb
+target/
+_wb/
 
-.*
+# Files
+.claude
 .DS_Store
+CLAUDE.md
+claude.md
+Cargo.lock

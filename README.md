@@ -50,7 +50,7 @@ concrete HelloEng of Hello = {
     }
 ```
 
-### Concrete Finnish Grammar File: HelloIta.gf
+### Concrete Italian Grammar File: HelloIta.gf
 
 ```haskell
 concrete HelloIta of Hello = {
@@ -99,7 +99,7 @@ use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load a PGF grammar from JSON file
-    let json_content = fs::read_to_string("tests/grammars/Zero.json")?;
+    let json_content = fs::read_to_string("grammars/Hello/Hello.json")?;
     let json: serde_json::Value = serde_json::from_str(&json_content)?;
     let pgf: PGF = serde_json::from_value(json)?;
 
@@ -109,21 +109,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse an abstract syntax tree from string
     let tree = grammar
         .abstract_grammar
-        // .parse_tree("eat apple", None)
-        .parse_tree("eat apple", None)
+        // .parse_tree("hello world", None)
+        .parse_tree("hello world", None)
         .expect("Failed to parse tree");
 
     println!("Parsed AST tree: {}", tree.print());
 
     // Linearize the tree in English
-    if let Some(eng_concrete) = grammar.concretes.get("ZeroEng") {
+    if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
     // if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
         let english_output = eng_concrete.linearize(&tree);
         println!("English: {}", english_output);
     }
 
     // Linearize the tree in Swedish
-    if let Some(swe_concrete) = grammar.concretes.get("ZeroSwe") {
+    if let Some(swe_concrete) = grammar.concretes.get("HelloFre") {
     // if let Some(swe_concrete) = grammar.concretes.get("HelloFre") {
         let swedish_output = swe_concrete.linearize(&tree);
         println!("Swedish: {}", swedish_output);
@@ -132,3 +132,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+## Debug Output
+
+The library includes optional debug output that can help you understand what's happening during parsing, linearization, and translation operations. To enable debug output, use the `set_debug()` function:
+
+```rust
+use gf_core::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Enable debug output
+    set_debug(true);
+    
+    // Your GF operations will now show detailed debug information
+    let grammar = GFGrammar::from_json(pgf);
+    let tree = grammar.abstract_grammar.parse_tree("hello world", None)?;
+    let result = grammar.translate("hello world", Some("HelloEng"), Some("HelloFre"));
+    
+    // Disable debug output
+    set_debug(false);
+    
+    Ok(())
+}
+```
+
+When enabled, you'll see output like:
+```
+[DEBUG] Loading GFGrammar from JSON with start category: Greeting
+[DEBUG] Found 2 concrete grammars: ["HelloEng", "HelloFre"]  
+[DEBUG] Loading concrete grammar: HelloEng
+[DEBUG] Loading concrete grammar: HelloFre
+[DEBUG] Starting translation of input: 'hello world'
+[DEBUG] From language: Some("HelloEng"), To language: Some("HelloFre")
+[DEBUG] Attempting to parse with language: HelloEng
+[DEBUG] Found 1 parse tree(s) for language HelloEng
+```
+
+This is particularly useful for:
+- Understanding why parsing might be failing
+- Debugging grammar issues
+- Monitoring translation performance
+- Learning how the GF runtime works internally

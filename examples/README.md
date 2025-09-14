@@ -6,5 +6,5 @@ Created examples/ folder with three Rust examples:
   3. translation_service.rs - Interactive translation service showing real-world usage with multilingual translation and
    completion hints
 
-  All examples use the existing test grammar (Zero.json) and showcase the core GF functionality: parsing, linearization,
+  All examples use the existing test grammar (Hello.json) and showcase the core GF functionality: parsing, linearization,
    translation, and completion.

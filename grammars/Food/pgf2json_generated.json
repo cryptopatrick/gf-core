@@ -1,0 +1,397 @@
+{
+  "abstract": {
+    "funs": {
+      "Boring": {
+        "args": [],
+        "cat": "Quality"
+      },
+      "Cheese": {
+        "args": [],
+        "cat": "Kind"
+      },
+      "Delicious": {
+        "args": [],
+        "cat": "Quality"
+      },
+      "Expensive": {
+        "args": [],
+        "cat": "Quality"
+      },
+      "Fish": {
+        "args": [],
+        "cat": "Kind"
+      },
+      "Fresh": {
+        "args": [],
+        "cat": "Quality"
+      },
+      "Is": {
+        "args": [
+          "Item",
+          "Quality"
+        ],
+        "cat": "Phrase"
+      },
+      "Italian": {
+        "args": [],
+        "cat": "Quality"
+      },
+      "QKind": {
+        "args": [
+          "Quality",
+          "Kind"
+        ],
+        "cat": "Kind"
+      },
+      "That": {
+        "args": [
+          "Kind"
+        ],
+        "cat": "Item"
+      },
+      "This": {
+        "args": [
+          "Kind"
+        ],
+        "cat": "Item"
+      },
+      "Very": {
+        "args": [
+          "Quality"
+        ],
+        "cat": "Quality"
+      },
+      "Warm": {
+        "args": [],
+        "cat": "Quality"
+      },
+      "Wine": {
+        "args": [],
+        "cat": "Kind"
+      }
+    },
+    "name": "Food",
+    "startcat": "Phrase"
+  },
+  "concretes": {
+    "FoodEng": {
+      "categories": {},
+      "ccats": [],
+      "flags": {},
+      "functions": [
+        {
+          "lins": [
+            3
+          ],
+          "name": "'lindef Item'"
+        },
+        {
+          "lins": [
+            0
+          ],
+          "name": "'lindef Item'"
+        },
+        {
+          "lins": [
+            3
+          ],
+          "name": "'lindef Kind'"
+        },
+        {
+          "lins": [
+            0
+          ],
+          "name": "'lindef Kind'"
+        },
+        {
+          "lins": [
+            3
+          ],
+          "name": "'lindef Phrase'"
+        },
+        {
+          "lins": [
+            0
+          ],
+          "name": "'lindef Phrase'"
+        },
+        {
+          "lins": [
+            3
+          ],
+          "name": "'lindef Quality'"
+        },
+        {
+          "lins": [
+            0
+          ],
+          "name": "'lindef Quality'"
+        },
+        {
+          "lins": [
+            5
+          ],
+          "name": "'Boring'"
+        },
+        {
+          "lins": [
+            6
+          ],
+          "name": "'Cheese'"
+        },
+        {
+          "lins": [
+            7
+          ],
+          "name": "'Delicious'"
+        },
+        {
+          "lins": [
+            8
+          ],
+          "name": "'Expensive'"
+        },
+        {
+          "lins": [
+            9
+          ],
+          "name": "'Fish'"
+        },
+        {
+          "lins": [
+            10
+          ],
+          "name": "'Fresh'"
+        },
+        {
+          "lins": [
+            2
+          ],
+          "name": "'Is'"
+        },
+        {
+          "lins": [
+            4
+          ],
+          "name": "'Italian'"
+        },
+        {
+          "lins": [
+            1
+          ],
+          "name": "'QKind'"
+        },
+        {
+          "lins": [
+            11
+          ],
+          "name": "'That'"
+        },
+        {
+          "lins": [
+            12
+          ],
+          "name": "'This'"
+        },
+        {
+          "lins": [
+            13
+          ],
+          "name": "'Very'"
+        },
+        {
+          "lins": [
+            14
+          ],
+          "name": "'Warm'"
+        },
+        {
+          "lins": [
+            15
+          ],
+          "name": "'Wine'"
+        }
+      ],
+      "lindefs": [],
+      "linrefs": [],
+      "printnames": [],
+      "productions": {},
+      "sequences": [
+        [
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          },
+          {
+            "args": [
+              1,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          },
+          {
+            "args": [
+              "is"
+            ],
+            "type": "SymKS"
+          },
+          {
+            "args": [
+              1,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymLit"
+          }
+        ],
+        [
+          {
+            "args": [
+              "Italian"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "boring"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "cheese"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "delicious"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "expensive"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "fish"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "fresh"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "that"
+            ],
+            "type": "SymKS"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              "this"
+            ],
+            "type": "SymKS"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              "very"
+            ],
+            "type": "SymKS"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              "warm"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "wine"
+            ],
+            "type": "SymKS"
+          }
+        ]
+      ],
+      "totalfids": 1
+    }
+  }
+}

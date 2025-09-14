@@ -1,0 +1,35 @@
+{
+  "languages": [
+    "HelloEng",
+    "HelloIta"
+  ],
+  "startcat": "Greeting",
+  "categories": [
+    "Greeting",
+    "Recipient"
+  ],
+  "functions": [
+    "Friends",
+    "Hello",
+    "Mum",
+    "World"
+  ],
+  "lincats": {
+    "Greeting": "Str",
+    "Recipient": "Str"
+  },
+  "linearizations": {
+    "HelloEng": {
+      "Friends": "friends",
+      "Hello": "hello <Recipient>",
+      "Mum": "mum",
+      "World": "world"
+    },
+    "HelloIta": {
+      "Friends": "amici",
+      "Hello": "ciao <Recipient>",
+      "Mum": "mamma",
+      "World": "mondo"
+    }
+  }
+}

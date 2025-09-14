@@ -1,0 +1,215 @@
+{
+  "abstract": {
+    "funs": {
+      "Friends": {
+        "args": [],
+        "cat": "Recipient"
+      },
+      "Hello": {
+        "args": [
+          "Recipient"
+        ],
+        "cat": "Greeting"
+      },
+      "Mum": {
+        "args": [],
+        "cat": "Recipient"
+      },
+      "World": {
+        "args": [],
+        "cat": "Recipient"
+      }
+    },
+    "name": "Hello",
+    "startcat": "Greeting"
+  },
+  "concretes": {
+    "HelloEng": {
+      "categories": {},
+      "ccats": [
+        {
+          "id": 0,
+          "productions": [
+            {
+              "args": [
+                {
+                  "fid": 1,
+                  "hypos": [
+                    2,
+                    0
+                  ],
+                  "type": "PArg"
+                }
+              ],
+              "fid": 4,
+              "type": "Apply"
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "productions": [
+            {
+              "arg": 3,
+              "type": "Coerce"
+            }
+          ]
+        }
+      ],
+      "flags": {},
+      "functions": [
+        {
+          "lins": [
+            1
+          ],
+          "name": "'lindef Greeting'"
+        },
+        {
+          "lins": [
+            0
+          ],
+          "name": "'lindef Greeting'"
+        },
+        {
+          "lins": [
+            1
+          ],
+          "name": "'lindef Recipient'"
+        },
+        {
+          "lins": [
+            0
+          ],
+          "name": "'lindef Recipient'"
+        },
+        {
+          "lins": [
+            2
+          ],
+          "name": "'Friends'"
+        },
+        {
+          "lins": [
+            3
+          ],
+          "name": "'Hello'"
+        },
+        {
+          "lins": [
+            4
+          ],
+          "name": "'Mum'"
+        },
+        {
+          "lins": [
+            5
+          ],
+          "name": "'World'"
+        }
+      ],
+      "lindefs": [],
+      "linrefs": [],
+      "printnames": [],
+      "productions": {
+        "0": [
+          {
+            "args": [],
+            "fid": 5,
+            "type": "Apply"
+          }
+        ],
+        "1": [
+          {
+            "args": [],
+            "fid": 4,
+            "type": "Apply"
+          }
+        ],
+        "2": [
+          {
+            "args": [
+              {
+                "fid": 0,
+                "hypos": [],
+                "type": "PArg"
+              }
+            ],
+            "fid": 6,
+            "type": "Apply"
+          },
+          {
+            "args": [
+              {
+                "fid": 1,
+                "hypos": [],
+                "type": "PArg"
+              }
+            ],
+            "fid": 7,
+            "type": "Apply"
+          }
+        ]
+      },
+      "sequences": [
+        [
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymLit"
+          }
+        ],
+        [
+          {
+            "args": [
+              "friends"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "hello"
+            ],
+            "type": "SymKS"
+          },
+          {
+            "args": [
+              0,
+              0
+            ],
+            "type": "SymCat"
+          }
+        ],
+        [
+          {
+            "args": [
+              "mum"
+            ],
+            "type": "SymKS"
+          }
+        ],
+        [
+          {
+            "args": [
+              "world"
+            ],
+            "type": "SymKS"
+          }
+        ]
+      ],
+      "totalfids": 3
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "languages": [
+    "HelloEng",
+    "HelloIta"
+  ],
+  "functions": [
+    "Friends",
+    "Hello",
+    "Mum",
+    "World"
+  ]
+}

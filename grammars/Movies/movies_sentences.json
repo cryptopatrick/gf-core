@@ -1,0 +1,25 @@
+{
+  "tests": [
+    {
+      "abstract": "Pred John (Recommends (UseDet DetA Movie))",
+      "english": "John recommends a movie",
+      "french": "Jean recommande un film"
+    },
+    {
+      "abstract": "Pred I_Pron (Watches (UseDet DetThe ActionMovie))",
+      "english": "I watch the action movie",
+      "french": "je regarde le film d'action"
+    },
+    {
+      "abstract": "Pred Mary (Recommends (UseDet DetA Film))",
+      "english": "Mary recommends a film",
+      "french": "Marie recommande un film"
+    },
+    {
+      "abstract": "Pred I_Pron (Watches (UseDet DetThe ActionMovie))",
+      "english": "I watch the action movie",
+      "french": "je regarde le film d'action"
+    }
+  ]
+}
+

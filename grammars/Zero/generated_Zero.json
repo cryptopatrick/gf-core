@@ -1,0 +1,32 @@
+{
+  "abstract": {
+    "funs": {
+      "apple": {
+        "args": [],
+        "arity": 0,
+        "cat": "N",
+        "is_constructor": false,
+        "prob": 0.5
+      },
+      "banana": {
+        "args": [],
+        "arity": 0,
+        "cat": "N",
+        "is_constructor": false,
+        "prob": 0.5
+      },
+      "eat": {
+        "args": [
+          "N"
+        ],
+        "arity": 0,
+        "cat": "Utt",
+        "is_constructor": false,
+        "prob": 1.0
+      }
+    },
+    "name": "apple",
+    "startcat": "String"
+  },
+  "concretes": {}
+}
