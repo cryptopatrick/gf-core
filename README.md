@@ -13,7 +13,7 @@ This makes it possible to have GF-powered applications and services without the
 need for a Haskell driven-GF backend server.
 
 ## Quickstart
-Here's a very short example that illustrates the use of the runtime.
+Here's a short example that illustrates the use of the runtime.
 For longer examples, please consult the official GF documentation.
 
 ## Step 01: Write a grammar
@@ -76,100 +76,94 @@ gf -make HelloEng.gf HelloIta.gf
 ```
 Running this command, GF will look at `Hello.gf` (since it's what the concrete syntaxes depend on) and then produce the PGF file: `Hello.pgf`.
 
-### Step 03: Generate JSON
-Next, we need to convert the `Hello.pgf` file into JSON format. We can do that __using 
-a tool provided by GF framework called `pgf2json`.
-
-```shell
-
-```haskell
-# Translate Hello.pgf into Hello.json format
-gf --run Hello.pgf <<< ":i --format=json" > Hello.json
-```
-echo "hello_world.json" | gf --run Hello.pgf --output-format=json
-```
-It's this generated json file (hello_world.json) that we can use in our Rust programs (see below).
-
-
-## Step 04: Use the compiled grammar in code
+### Step 03: use the runtime
+Here's an example of using the gf-core runtime:  
+This program will:
+  1. Load the `Food.pgf` grammar file
+  2. Parse it and convert it to JSON
+  3. Create a GFGrammar from the JSON
+  4. Parse the sentence "this fish is delicious" into an AST
+  5. Linearizes the AST back to English text
+  6. Shows available concrete grammars (English and Italian)
 
 ```rust
 use gf_core::*;
 use std::fs;
+use bytes::Bytes;
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Load a PGF grammar from JSON file
-    let json_content = fs::read_to_string("grammars/Hello/Hello.json")?;
-    let json: serde_json::Value = serde_json::from_str(&json_content)?;
-    let pgf: PGF = serde_json::from_value(json)?;
-
-    // Convert to runtime grammar
-    let grammar = GFGrammar::from_json(pgf);
-
-    // Parse an abstract syntax tree from string
-    let tree = grammar
-        .abstract_grammar
-        // .parse_tree("hello world", None)
-        .parse_tree("hello world", None)
-        .expect("Failed to parse tree");
-
-    println!("Parsed AST tree: {}", tree.print());
-
-    // Linearize the tree in English
-    if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
-    // if let Some(eng_concrete) = grammar.concretes.get("HelloEng") {
-        let english_output = eng_concrete.linearize(&tree);
-        println!("English: {}", english_output);
-    }
-
-    // Linearize the tree in Swedish
-    if let Some(swe_concrete) = grammar.concretes.get("HelloFre") {
-    // if let Some(swe_concrete) = grammar.concretes.get("HelloFre") {
-        let swedish_output = swe_concrete.linearize(&tree);
-        println!("Swedish: {}", swedish_output);
-    }
-
-    Ok(())
-}
-```
-
-## Debug Output
-
-The library includes optional debug output that can help you understand what's happening during parsing, linearization, and translation operations. To enable debug output, use the `set_debug()` function:
-
-```rust
-use gf_core::*;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Enable debug output
+    // Uncomment the line below to see debug output from GF-Core operations
     set_debug(true);
     
-    // Your GF operations will now show detailed debug information
-    let grammar = GFGrammar::from_json(pgf);
-    let tree = grammar.abstract_grammar.parse_tree("hello world", None)?;
-    let result = grammar.translate("hello world", Some("HelloEng"), Some("HelloFre"));
+    // Read the binary file containing the PGF grammar.
+    let pgf_content = fs::read("grammars/Food/Food.pgf")?;
     
-    // Disable debug output
-    set_debug(false);
+    // Parse the binary content of the PGF file.
+    let pgf = pgf2json::parse_pgf(&Bytes::from(pgf_content))?;
     
+    // Convert the PGF data into JSON formatl
+    let json_string = pgf2json::pgf_to_json(&pgf)?;
+
+    // Parse JSON into JSON values.
+    let json_value: serde_json::Value = serde_json::from_str(&json_string)?;
+    
+    // Create a JSON valued PGF struct.
+    let pgf_struct: PGF = serde_json::from_value(json_value)?;
+    println!("TODO: Understand content of (pgf_struct): {:?}", pgf_struct);
+    
+    // Create a GF grammar from the PGF struct.
+    let grammar: GFGrammar = GFGrammar::from_json(pgf_struct);
+    
+    // Test our fixed abstract syntax parsing
+    let test_cases = [
+        "Fish",
+        "This(Fish)", 
+        "Is(This(Fish), Delicious)",
+        "MakeS (NP) (VP)",
+    ];
+    
+    for test_case in test_cases {
+        println!("\nTesting abstract syntax: '{}'", test_case);
+        match grammar.abstract_grammar.parse_tree(test_case, None) {
+            Some(tree) => {
+                println!("✓ Parsed successfully: {}", tree.print());
+                
+                // Try to linearize this tree
+                if let Some(eng_concrete) = grammar.concretes.get("FoodEng") {
+                    println!("LOG: Attempting linearization with FoodEng concrete grammar");
+                    let english_output = eng_concrete.linearize(&tree);
+                    println!("  English: '{}'", english_output);
+                }
+            }
+            None => {
+                println!("✗ Failed to parse");
+            }
+        }
+    }
+    
+    // Also test the natural language parsing for comparison
+    println!("\n=== Natural Language Parsing (for comparison) ===");
+    if let Some(eng_concrete) = grammar.concretes.get("FoodEng") {
+        let trees = eng_concrete.parse_string("this fish is delicious", &grammar.abstract_grammar.startcat);
+        
+        if trees.is_empty() {
+            println!("No valid parse found for 'this fish is delicious'");
+        } else {
+            println!("Found {} parse tree(s):", trees.len());
+            for (i, tree) in trees.iter().enumerate() {
+                println!("  Tree {}: {}", i + 1, tree.print());
+                
+                // Linearize back to English
+                let english_output = eng_concrete.linearize(tree);
+                println!("  English: {}", english_output);
+            }
+        }
+    }
+
+    // Note: FoodIta concrete grammar not available in this PGF file
+    println!("Available concrete grammars: {:?}", grammar.concretes.keys().collect::<Vec<_>>());
+
     Ok(())
 }
 ```
-
-When enabled, you'll see output like:
-```
-[DEBUG] Loading GFGrammar from JSON with start category: Greeting
-[DEBUG] Found 2 concrete grammars: ["HelloEng", "HelloFre"]  
-[DEBUG] Loading concrete grammar: HelloEng
-[DEBUG] Loading concrete grammar: HelloFre
-[DEBUG] Starting translation of input: 'hello world'
-[DEBUG] From language: Some("HelloEng"), To language: Some("HelloFre")
-[DEBUG] Attempting to parse with language: HelloEng
-[DEBUG] Found 1 parse tree(s) for language HelloEng
-```
-
-This is particularly useful for:
-- Understanding why parsing might be failing
-- Debugging grammar issues
-- Monitoring translation performance
-- Learning how the GF runtime works internally

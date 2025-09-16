@@ -1,5 +1,8 @@
 target/
 _wb/
+_dev/
+docs-dev
+
 
 # Files
 .claude
@@ -7,3 +10,4 @@ _wb/
 CLAUDE.md
 claude.md
 Cargo.lock
+

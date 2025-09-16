@@ -1,6 +1,6 @@
 [package]
 name = "gf-core"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["CryptoPatrick <cryptopatrick@gmail.com>"]
 description = """
 Rust runtime for Grammatical Framework.
@@ -8,8 +8,8 @@ Rust runtime for Grammatical Framework.
 documentation = "https://docs.rs/gf-core"
 homepage = "https://github.com/cryptopatrick/gf-core"
 repository = "https://github.com/cryptopatrick/gf-core"
-keywords = ["grammar", "gf"]
-categories = ["natural-language"]
+keywords = ["grammar", "gf", "parser", "runtime"]
+categories = ["parser-implementations"]
 license = "MIT"
 exclude = ["/.github/"]
 autotests = false
