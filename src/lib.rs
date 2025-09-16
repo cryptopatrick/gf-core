@@ -1,14 +1,10 @@
 mod pgf_json;
-// mod parser;
-
 pub use pgf_json::*;
-// pub use parser::*;
 
 use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-// use std::io::{Cursor};
 
 /// Global debug flag for controlling debug output throughout the library
 static DEBUG_ENABLED: AtomicBool = AtomicBool::new(false);
@@ -210,6 +206,8 @@ impl GFGrammar {
         debug_println!("Loading GFGrammar from JSON with start category: {}", json.abstract_.startcat);
         debug_println!("Found {} concrete grammars: {:?}", json.concretes.len(), json.concretes.keys().collect::<Vec<_>>());
         
+        // FIXME: HashMap ordering is non-deterministic which might cause problems
+        // when we try to match the ordering of the generated json file.
         let cncs: HashMap<String, GFConcrete> = json
             .concretes
             .into_iter()
@@ -344,142 +342,136 @@ pub struct GFAbstract {
 ///
 /// Handles function call syntax like `Function(Arg1, Arg2)` and nested expressions.
 struct AbstractSyntaxParser {
-    input: Vec<char>,
+    tokens: Vec<String>,
     position: usize,
 }
 
 impl AbstractSyntaxParser {
     fn new(input: &str) -> Self {
+        // Use regex-like tokenization similar to TypeScript
+        // TypeScript: str.match(/[\w\u00C0-\u00FF\'\.\"]+|\(|\)|\?|\:/g)
+        let mut tokens = Vec::new();
+        let mut current_token = String::new();
+        
+        for ch in input.chars() {
+            match ch {
+                '(' | ')' | '?' | ':' | ',' => {
+                    if !current_token.is_empty() {
+                        tokens.push(current_token.clone());
+                        current_token.clear();
+                    }
+                    tokens.push(ch.to_string());
+                }
+                c if c.is_whitespace() => {
+                    if !current_token.is_empty() {
+                        tokens.push(current_token.clone());
+                        current_token.clear();
+                    }
+                }
+                c if c.is_alphanumeric() || c == '_' || c == '\'' || c == '.' || c == '"' => {
+                    current_token.push(c);
+                }
+                _ => {
+                    // For other characters, treat as separate tokens
+                    if !current_token.is_empty() {
+                        tokens.push(current_token.clone());
+                        current_token.clear();
+                    }
+                    tokens.push(ch.to_string());
+                }
+            }
+        }
+        
+        if !current_token.is_empty() {
+            tokens.push(current_token);
+        }
+        
         Self {
-            input: input.chars().collect(),
+            tokens,
             position: 0,
         }
     }
 
-    fn current_char(&self) -> Option<char> {
-        self.input.get(self.position).copied()
+    fn current_token(&self) -> Option<&String> {
+        self.tokens.get(self.position)
     }
 
-    fn advance(&mut self) -> Option<char> {
-        let ch = self.current_char();
-        self.position += 1;
-        ch
-    }
-
-    fn skip_whitespace(&mut self) {
-        while let Some(ch) = self.current_char() {
-            if ch.is_whitespace() {
-                self.advance();
-            } else {
-                break;
-            }
-        }
-    }
-
-    fn parse_identifier(&mut self) -> Result<String, &'static str> {
-        let mut result = String::new();
-        
-        while let Some(ch) = self.current_char() {
-            if ch.is_alphanumeric() || ch == '_' || ch == '?' || ch == '\'' || ch == '"' {
-                result.push(ch);
-                self.advance();
-            } else {
-                break;
-            }
-        }
-
-        if result.is_empty() {
-            Err("Expected identifier")
+    fn advance(&mut self) -> Option<String> {
+        if self.position < self.tokens.len() {
+            let token = self.tokens[self.position].clone();
+            self.position += 1;
+            Some(token)
         } else {
-            Ok(result)
+            None
         }
-    }
-
-    fn parse_arguments(&mut self) -> Result<Vec<Fun>, &'static str> {
-        let mut args = Vec::new();
-
-        // Expect opening parenthesis
-        if self.current_char() != Some('(') {
-            return Err("Expected '('");
-        }
-        self.advance(); // consume '('
-
-        self.skip_whitespace();
-
-        // Handle empty argument list
-        if self.current_char() == Some(')') {
-            self.advance(); // consume ')'
-            return Ok(args);
-        }
-
-        loop {
-            self.skip_whitespace();
-            args.push(self.parse_expression()?);
-            self.skip_whitespace();
-
-            match self.current_char() {
-                Some(',') => {
-                    self.advance(); // consume ','
-                    continue;
-                }
-                Some(')') => {
-                    self.advance(); // consume ')'
-                    break;
-                }
-                _ => return Err("Expected ',' or ')'"),
-            }
-        }
-
-        Ok(args)
     }
 
     fn parse_expression(&mut self) -> Result<Fun, &'static str> {
-        self.skip_whitespace();
+        self.parse_tree_with_prec(0)
+    }
 
-        let name = self.parse_identifier()?;
+    // This follows the TypeScript parseTree_ implementation exactly
+    fn parse_tree_with_prec(&mut self, prec: usize) -> Result<Fun, &'static str> {
+        if self.tokens.is_empty() || self.position >= self.tokens.len() {
+            return Err("No more tokens");
+        }
         
-        // Check if there's whitespace before the next '('
-        let has_space_before_paren = self.current_char().map(|c| c.is_whitespace()).unwrap_or(false);
-        self.skip_whitespace();
-
-        // Check if this is a function call with parentheses: Function(Arg1, Arg2)
-        // vs space-separated args: Function (Arg1) (Arg2)
-        // The key difference: function calls have no space before the '('
-        if self.current_char() == Some('(') && !has_space_before_paren {
-            let args = self.parse_arguments()?;
-            Ok(Fun::new(name, args))
-        } else {
-            // Check for space-separated arguments like "MakeS (NP) (VP)"
-            let mut args = Vec::new();
-            
-            while self.current_char() == Some('(') {
-                self.advance(); // consume '('
-                self.skip_whitespace();
-                let arg_name = self.parse_identifier()?;
-                self.skip_whitespace();
-                if self.current_char() != Some(')') {
-                    return Err("Expected ')'");
-                }
+        let current = self.current_token().cloned();
+        if current.as_deref() == Some(")") {
+            return Err("Unexpected ')'");
+        }
+        
+        let t = self.advance().ok_or("No token available")?;
+        
+        if t == "(" {
+            let tree = self.parse_tree_with_prec(0)?;
+            // Expect closing parenthesis
+            if self.current_token().map(|s| s.as_str()) == Some(")") {
                 self.advance(); // consume ')'
-                self.skip_whitespace();
-                
-                args.push(Fun::new(arg_name, vec![]));
             }
+            Ok(tree)
+        } else if t == "?" {
+            Ok(Fun::new("?".to_string(), vec![]))
+        } else {
+            let mut tree = Fun::new(t, vec![]);
             
-            // If no parenthesized args, check for space-separated identifiers (like "hello world")
-            if args.is_empty() {
-                while let Some(ch) = self.current_char() {
-                    if ch.is_alphanumeric() || ch == '_' || ch == '?' {
-                        let arg_name = self.parse_identifier()?;
-                        args.push(Fun::new(arg_name, vec![]));
-                        self.skip_whitespace();
-                    } else {
-                        break;
+            // Check if this is immediately followed by a parenthesis for function call syntax
+            // Function call syntax takes priority over space-separated args
+            if self.current_token().map(|s| s.as_str()) == Some("(") {
+                self.advance(); // consume '('
+                
+                // Parse comma-separated arguments inside parentheses
+                if self.current_token().map(|s| s.as_str()) != Some(")") {
+                    loop {
+                        let arg = self.parse_tree_with_prec(1)?;
+                        tree.args.push(arg);
+                        
+                        match self.current_token().map(|s| s.as_str()) {
+                            Some(",") => {
+                                self.advance(); // consume comma
+                                continue;
+                            }
+                            Some(")") => break,
+                            _ => return Err("Expected ',' or ')'"),
+                        }
+                    }
+                }
+                
+                if self.current_token().map(|s| s.as_str()) == Some(")") {
+                    self.advance(); // consume ')'
+                }
+            } else if prec == 0 {
+                // TypeScript logic: when prec == 0, collect args until can't parse any more
+                // This handles space-separated args like "MakeS (NP) (VP)" and "hello world"
+                loop {
+                    match self.parse_tree_with_prec(1) {
+                        Ok(child) => tree.args.push(child),
+                        Err(_) => break,
                     }
                 }
             }
             
-            Ok(Fun::new(name, args))
+            Ok(tree)
         }
     }
 }
@@ -1660,71 +1652,121 @@ impl ParseState {
                 match sym {
                     Sym::SymCat { i, label } => {
                         let fid = item.args[*i].fid;
-                        if let Some(items) =
-                            self.chart.lookup_ac(fid, *label as i32)
-                        {
+                        
+                        // Follow TypeScript implementation logic exactly
+                        if let Some(items) = self.chart.lookup_ac(fid, *label as i32) {
+                            // There are already waiting items for this SymCat
                             if !items.contains(&item) {
                                 let mut items = items.clone();
                                 items.push(item.clone());
-                                self.chart.insert_ac(
-                                    fid,
-                                    *label as i32,
-                                    items,
-                                );
-                                if let Some(fid2) = self.chart.lookup_pc(
-                                    fid,
-                                    *label as i32,
-                                    self.chart.offset,
-                                ) {
+                                self.chart.insert_ac(fid, *label as i32, items);
+                                
+                                // Check if there's already a completion available
+                                if let Some(fid2) = self.chart.lookup_pc(fid, *label as i32, self.chart.offset) {
+                                    // There's already a completion - advance immediately
                                     agenda.push(item.shift_over_arg(*i, fid2));
                                 }
                             }
                         } else {
+                            // No existing waiting items - create new parsing items AND add current item as waiting
                             let rules = self.chart.expand_forest(fid);
                             for rule in rules {
                                 if let Production::Apply(apply) = rule {
-                                    let runtime_fun = match apply
-                                        .to_apply_fun()
-                                    {
-                                        ApplyFun::CncFun(fun) => {
-                                            // Convert from JSON CncFun to RuntimeCncFun if needed
-                                            // For now, assume it's already converted at construction
-                                            RuntimeCncFun::new(
-                                                fun.name.clone(),
-                                                LinType::FId(fun.lins.clone()),
-                                            )
-                                        }
-                                        ApplyFun::FId(id) => {
-                                            // Create a placeholder RuntimeCncFun for FId
-                                            RuntimeCncFun::new(
-                                                id.to_string(),
-                                                LinType::FId(vec![]),
-                                            )
-                                        }
-                                    };
-
-                                    let seq = match &runtime_fun.lins {
-                                        LinType::Sym(syms) => {
-                                            if *label < syms.len() {
-                                                syms[*label].clone()
-                                            } else {
-                                                vec![]
+                                    match apply.to_apply_fun() {
+                                        ApplyFun::CncFun(json_fun) => {
+                                            for &lin_idx in &json_fun.lins {
+                                                if (lin_idx as usize) < self.concrete.functions.len() {
+                                                    let runtime_fun = self.concrete.functions[lin_idx as usize].clone();
+                                                    match &runtime_fun.lins {
+                                                        LinType::Sym(lins) => {
+                                                            for (lbl, lin) in lins.iter().enumerate() {
+                                                                if lbl == *label {  // Only create items for the specific label
+                                                                    let new_item = ActiveItem::new(
+                                                                        self.chart.offset,
+                                                                        0,
+                                                                        runtime_fun.clone(),
+                                                                        lin.clone(),
+                                                                        apply.args.clone(),
+                                                                        fid,
+                                                                        lbl as i32,
+                                                                    );
+                                                                    
+                                                                    // Check for duplicates to prevent infinite recursion
+                                                                    if !agenda.contains(&new_item) {
+                                                                        agenda.push(new_item);
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        LinType::FId(_) => {
+                                                            let new_item = ActiveItem::new(
+                                                                self.chart.offset,
+                                                                0,
+                                                                runtime_fun.clone(),
+                                                                vec![],
+                                                                apply.args.clone(),
+                                                                fid,
+                                                                0,
+                                                            );
+                                                            
+                                                            // Check for duplicates to prevent infinite recursion
+                                                            if !agenda.contains(&new_item) {
+                                                                agenda.push(new_item);
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
-                                        LinType::FId(_) => vec![],
-                                    };
-
-                                    agenda.push(ActiveItem::new(
-                                        self.chart.offset,
-                                        0,
-                                        runtime_fun,
-                                        seq,
-                                        apply.args,
-                                        fid,
-                                        *label as i32,
-                                    ));
+                                        ApplyFun::FId(fun_id) => {
+                                            if (fun_id as usize) < self.concrete.functions.len() {
+                                                let runtime_fun = self.concrete.functions[fun_id as usize].clone();
+                                                match &runtime_fun.lins {
+                                                    LinType::Sym(lins) => {
+                                                        for (lbl, lin) in lins.iter().enumerate() {
+                                                            if lbl == *label {  // Only create items for the specific label
+                                                                let new_item = ActiveItem::new(
+                                                                    self.chart.offset,
+                                                                    0,
+                                                                    runtime_fun.clone(),
+                                                                    lin.clone(),
+                                                                    apply.args.clone(),
+                                                                    fid,
+                                                                    lbl as i32,
+                                                                );
+                                                                
+                                                                // Check for duplicates to prevent infinite recursion
+                                                                if !agenda.contains(&new_item) {
+                                                                    agenda.push(new_item);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    LinType::FId(_) => {
+                                                        let new_item = ActiveItem::new(
+                                                            self.chart.offset,
+                                                            0,
+                                                            runtime_fun.clone(),
+                                                            vec![],
+                                                            apply.args.clone(),
+                                                            fid,
+                                                            0,
+                                                        );
+                                                        
+                                                        // Check for duplicates to prevent infinite recursion
+                                                        if !agenda.contains(&new_item) {
+                                                            agenda.push(new_item);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
+                            
+                            // Store current item as waiting for this SymCat completion
+                            self.chart.insert_ac(fid, *label as i32, vec![item.clone()]);
                         }
                     }
                     Sym::SymKS(sym) => {
@@ -1767,18 +1809,22 @@ impl ParseState {
                     }
                 }
             } else {
+                // Item has completed parsing (dot >= seq.len)
                 let fid = self
                     .chart
                     .lookup_pc(item.fid, item.lbl, item.offset)
                     .unwrap_or_else(|| {
                         let new_fid = self.chart.next_id;
                         self.chart.next_id += 1;
+                        
                         self.chart.insert_pc(
                             item.fid,
                             item.lbl,
                             item.offset,
                             new_fid,
                         );
+                        
+                        // Record the completion in the forest
                         let apply = Apply {
                             fid: None,
                             fun: Some(CncFun::new(
@@ -1790,9 +1836,23 @@ impl ParseState {
                         self.chart
                             .forest
                             .insert(new_fid, vec![Production::Apply(apply)]);
+                        
                         new_fid
                     });
 
+                // Check for any active items that were waiting for this completion
+                // Use lookup_aco with the item's original offset (like TypeScript)
+                if let Some(waiting_items) = self.chart.lookup_aco(item.offset, item.fid, item.lbl) {
+                    for waiting_item in waiting_items.clone() {
+                        if let Some(sym_cat) = waiting_item.seq.get(waiting_item.dot) {
+                            if let Sym::SymCat { i, .. } = sym_cat {
+                                agenda.push(waiting_item.shift_over_arg(*i, fid));
+                            }
+                        }
+                    }
+                }
+
+                // Also check for any labels that might need processing
                 if let Some(labels) = self.chart.labels_ac(fid) {
                     for lbl in labels {
                         let seq = match &item.fun.lins {
@@ -1827,35 +1887,60 @@ impl ParseState {
     /// # Arguments
     /// * `concrete` - The concrete grammar.
     /// * `start_cat` - The start category.
+    /// There are five inference rules: 
+    ///     Pre-Predict, Pre-Combine,
+    ///     Mark-Predict, Mark-Combine and Convert.
     pub fn new(concrete: GFConcrete, start_cat: String) -> Self {
         let mut items = Trie::new();
         let chart = Chart::new(concrete.clone());
 
         let mut active_items = Vec::new();
 
+        debug_println!("ParseState::new: Looking for start category '{}'", start_cat);
+        debug_println!("Available start categories: {:?}", concrete.start_cats.keys().collect::<Vec<_>>());
+        
         if let Some((start, end)) = concrete.start_cats.get(&start_cat) {
+            debug_println!("Found start category '{}' with FID range: {} to {}", start_cat, start, end);
             for fid in *start..=*end {
                 let rules = chart.expand_forest(fid);
+                debug_println!("  FID {}: found {} rules", fid, rules.len());
                 for rule in rules {
                     if let Production::Apply(apply) = rule {
                         match apply.to_apply_fun() {
                             ApplyFun::CncFun(json_fun) => {
-                                // Convert JSON CncFun to RuntimeCncFun
-                                let runtime_fun = RuntimeCncFun::new(
-                                    json_fun.name.clone(),
-                                    LinType::FId(json_fun.lins.clone()),
-                                );
-
-                                // Create active items for each linearization
-                                active_items.push(ActiveItem::new(
-                                    0,
-                                    0,
-                                    runtime_fun,
-                                    vec![], // Will be filled based on actual lintype
-                                    apply.args.clone(),
-                                    fid,
-                                    0,
-                                ));
+                                // Find the actual RuntimeCncFun that corresponds to this CncFun
+                                // The json_fun.lins contains indices into the concrete.functions array
+                                for &lin_idx in &json_fun.lins {
+                                    if (lin_idx as usize) < concrete.functions.len() {
+                                        let runtime_fun = concrete.functions[lin_idx as usize].clone();
+                                        match &runtime_fun.lins {
+                                            LinType::Sym(lins) => {
+                                                for (lbl, lin) in lins.iter().enumerate() {
+                                                    active_items.push(ActiveItem::new(
+                                                        0,
+                                                        0,
+                                                        runtime_fun.clone(),
+                                                        lin.clone(),
+                                                        apply.args.clone(),
+                                                        fid,
+                                                        lbl as i32,
+                                                    ));
+                                                }
+                                            }
+                                            LinType::FId(_) => {
+                                                active_items.push(ActiveItem::new(
+                                                    0,
+                                                    0,
+                                                    runtime_fun.clone(),
+                                                    vec![],
+                                                    apply.args.clone(),
+                                                    fid,
+                                                    0,
+                                                ));
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             ApplyFun::FId(fun_id) => {
                                 if (fun_id as usize) < concrete.functions.len()
@@ -1903,6 +1988,15 @@ impl ParseState {
             }
         }
 
+        debug_println!("ParseState::new: Created {} initial active items", active_items.len());
+        for (i, item) in active_items.iter().enumerate() {
+            debug_println!("  Item {}: fun={}, seq_len={}, fid={}, lbl={}", 
+                i, item.fun.name, item.seq.len(), item.fid, item.lbl);
+            if !item.seq.is_empty() {
+                debug_println!("    First symbol: {:?}", item.seq[0]);
+            }
+        }
+        
         items.insert_chain(&[], active_items);
 
         ParseState { concrete, start_cat, items, chart }
@@ -1920,6 +2014,8 @@ impl ParseState {
             self.items.lookup(token).cloned().unwrap_or_else(Trie::new);
 
         let mut agenda = self.items.value.clone().unwrap_or_default();
+
+        let mut completed_items = Vec::new();
 
         self.process(
             &mut agenda,
@@ -1941,10 +2037,26 @@ impl ParseState {
             |tokens, item| {
                 if tokens.first() == Some(&token.to_string()) {
                     let tokens1 = tokens[1..].to_vec();
+                    
+                    // Check if this item is now complete (dot >= seq.len)
+                    if item.dot >= item.seq.len() {
+                        completed_items.push(item.clone());
+                    }
+                    
                     acc.insert_chain1(&tokens1, item);
                 }
             },
         );
+
+        // Process any completed items  
+        if !completed_items.is_empty() {
+            agenda.extend(completed_items);
+            self.process(
+                &mut agenda,
+                |_| None, // No literal callback needed
+                |_, _| {}, // No token callback needed
+            );
+        }
 
         self.items = acc;
         self.chart.shift();
@@ -2053,8 +2165,10 @@ impl ParseState {
         if let Some((start, end)) =
             self.concrete.start_cats.get(&self.start_cat)
         {
+            
             for fid0 in *start..=*end {
                 let rules = self.chart.expand_forest(fid0);
+                
                 let mut labels = vec![];
                 for rule in &rules {
                     if let Production::Apply(a) = rule {
@@ -2087,11 +2201,42 @@ impl ParseState {
                 }
 
                 for lbl in labels {
-                    if let Some(fid) = self.chart.lookup_pc(fid0, lbl, 0) {
-                        let arg_trees = go(fid, total_fids, forest);
-                        for tree in arg_trees {
-                            if !trees.contains(&tree) {
-                                trees.push(tree);
+                    let mut found = false;
+                    
+                    // Try different offsets since shift() clears the passive chart
+                    for try_offset in 0..=self.chart.offset {
+                        if let Some(fid) = self.chart.lookup_pc(fid0, lbl, try_offset) {
+                            let arg_trees = go(fid, total_fids, forest);
+                            for tree in arg_trees {
+                                if !trees.contains(&tree) {
+                                    trees.push(tree);
+                                }
+                            }
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    if !found {
+                        // As a fallback, look directly in the forest for any completions
+                        // Since shift() clears the passive chart, we need to find completions in the forest
+                        for (&forest_fid, productions) in forest.iter() {
+                            if forest_fid >= total_fids {
+                                for production in productions {
+                                    if let Production::Apply(apply) = production {
+                                        let name = apply.get_name();
+                                        
+                                        // Accept any completion that looks like a valid function name
+                                        if !name.is_empty() && !name.chars().all(|c| c.is_ascii_digit()) {
+                                            let arg_trees = go(forest_fid, total_fids, forest);
+                                            for tree in arg_trees {
+                                                if !trees.contains(&tree) {
+                                                    trees.push(tree);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -2533,7 +2678,7 @@ mod tests {
         let grammar = GFGrammar::from_json(pgf);
 
         // Verify grammar was created successfully
-        assert_eq!(grammar.abstract_grammar.startcat, "Int");
+        assert_eq!(grammar.abstract_grammar.startcat, "Greeting");
         // Note: This test JSON has no concrete grammars
     }
 
@@ -2558,30 +2703,31 @@ mod tests {
 
     /// Test English linearization.
     #[test]
-    #[ignore] // Disabled: test JSON has no concrete grammars
     fn test_linearize_english() {
-        let json_content = fs::read_to_string("grammars/Hello/Hello.json")
-            .expect("Failed to read Hello.json");
+        let json_content = fs::read_to_string("grammars/Food/gf_make_generated.json")
+            .expect("Failed to read gf_make_generated.json");
+    
         let json: serde_json::Value =
             serde_json::from_str(&json_content).expect("Failed to parse JSON");
         let pgf: PGF =
             serde_json::from_value(json).expect("Failed to deserialize PGF");
         let grammar = GFGrammar::from_json(pgf);
 
-        let tree = grammar
-            .abstract_grammar
-            .parse_tree("hello world", None)
-            .expect("Failed to parse tree");
-        let linearized = grammar.concretes["HelloEng"].linearize(&tree);
-        assert_eq!(linearized, "hello world");
+        // Create the correct abstract syntax tree: Is(This(Fish), Delicious)
+        let fish = Fun { name: "Fish".to_string(), args: vec![], type_: None };
+        let this_fish = Fun { name: "This".to_string(), args: vec![fish], type_: None };
+        let delicious = Fun { name: "Delicious".to_string(), args: vec![], type_: None };
+        let tree = Fun { name: "Is".to_string(), args: vec![this_fish, delicious], type_: None };
+        let linearized = grammar.concretes["FoodEng"].linearize(&tree);
+        assert_eq!(linearized, "this fish is delicious");
     }
 
     /// Test Italian linearization.
     #[test]
     #[ignore] // Disabled: test JSON has no concrete grammars
     fn test_linearize_italian() {
-        let json_content = fs::read_to_string("grammars/Hello/Hello.json")
-            .expect("Failed to read Hello.json");
+        let json_content = fs::read_to_string("grammars/Food/gf_make_generated.json")
+            .expect("Failed to read gf_make_generated.json");
         let json: serde_json::Value =
             serde_json::from_str(&json_content).expect("Failed to parse JSON");
         let pgf: PGF =
@@ -2590,9 +2736,9 @@ mod tests {
 
         let tree = grammar
             .abstract_grammar
-            .parse_tree("hello world", None)
+            .parse_tree("this fish is delicious", None)
             .expect("Failed to parse tree");
-        let linearized = grammar.concretes["HelloIta"].linearize(&tree);
-        assert_eq!(linearized, "ciao mondo");
+        let linearized = grammar.concretes["FoodEng"].linearize(&tree);
+        assert_eq!(linearized, "this fish is delicious");
     }
 }

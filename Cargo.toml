@@ -1,6 +1,6 @@
 [package]
 name = "gf-core"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["CryptoPatrick <cryptopatrick@gmail.com>"]
 description = """
 Rust runtime for Grammatical Framework.
