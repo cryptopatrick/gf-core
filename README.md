@@ -2,7 +2,7 @@
   <br>
   <a href="https://www.grammaticalframework.org/">
     <img 
-      src="https://github.com/cryptopatrick/factory/blob/master/img/gf-core-logo.png" 
+      src="https://github.com/cryptopatrick/factory/blob/master/img/gfcore.png" 
       alt="GF-Core" 
       width="200"
     />
