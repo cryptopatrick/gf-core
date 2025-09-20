@@ -1,12 +1,10 @@
 <h1 align="center">
   <br>
-  <a href="https://www.grammaticalframework.org/">
     <img 
       src="https://github.com/cryptopatrick/factory/blob/master/img/100days/gfcore.png" 
       alt="GF-CORE" 
       width="200"
     />
-  </a>
   <br>
   GF-CORE
   <br>
