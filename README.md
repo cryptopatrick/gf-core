@@ -9,7 +9,7 @@
     />
   </a>
   <br>
-  GF-Core
+  GF-CORE
   <br>
 </h1>
 
@@ -54,7 +54,7 @@
 <details open="open">
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#what-is-gf-core"> What is GF-Core</a></li>
+    <li><a href="#what-is-gf-core"> What is GF-CORE</a></li>
     <li><a href="#features"> Features</a></li>
       <ul>
         <li><a href="#core-runtime-capabilities"> Core Runtime Capabilities</a></li>
@@ -72,7 +72,7 @@
   </ol>
 </details>
 
-## 🤔 What is GF-Core
+## 🤔 What is GF-CORE
 
 `gf-core` is a pure Rust implementation of the Grammatical Framework runtime that enables developers to integrate GF-powered multilingual natural language processing directly into Rust applications without requiring a separate Haskell-based GF server.
 
