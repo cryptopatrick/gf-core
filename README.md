@@ -1,4 +1,3 @@
-<a href="" id="topofpage"></a>
 <h1 align="center">
   <br>
   <a href="https://www.grammaticalframework.org/">
