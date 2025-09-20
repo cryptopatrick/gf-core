@@ -4,7 +4,7 @@
   <a href="https://www.grammaticalframework.org/">
     <img 
       src="https://github.com/cryptopatrick/factory/blob/master/img/100days/gfcore.png" 
-      alt="GF-Core" 
+      alt="GF-CORE" 
       width="200"
     />
   </a>
@@ -37,7 +37,7 @@
 </p>
 
 <p align="center">
-  <a href="#what-is-gf-core">What is GF-Core</a> •
+  <a href="#what-is-gf-core">What is GF-CORE</a> •
   <a href="#features">Features</a> •
   <a href="#how-to-use">How To Use</a> •
   <a href="#documentation">Documentation</a> •
