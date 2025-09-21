@@ -297,13 +297,13 @@ Comprehensive documentation is available at [docs.rs/gf-core](https://docs.rs/gf
 
 ## 🖊 Author
 
-<span>CryptoPatrick  <a href="https://x.com/cryptopatrick"><img width="30" height="30" src="https://github.com/cryptopatrick/factory/blob/master/img/x.png" /></a>  </span>  
+<a href="https://x.com/cryptopatrick">CryptoPatrick</a>  
+
 Keybase Verification:  
 https://keybase.io/cryptopatrick/sigs/8epNh5h2FtIX1UNNmf8YQ-k33M8J-Md4LnAN
 
 ## 🐣 Support
-Leave a ⭐ If you think this project is cool.  
-If you think it has helped in any way, consider [buying me a coffee!](https://github.com/cryptopatrick/factory/blob/master/img/bmc-button.png)
+Leave a ⭐ if you think this project is cool.  
 
 ## 🤝 Contributing
 
