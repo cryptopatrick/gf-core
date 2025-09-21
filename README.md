@@ -51,20 +51,20 @@
 <details open="open">
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#what-is-gf-core"> What is GF-CORE</a></li>
-    <li><a href="#features"> Features</a></li>
+    <li><a href="#-what-is-gf-core"> What is GF-CORE</a></li>
+    <li><a href="#-features"> Features</a></li>
       <ul>
-        <li><a href="#core-runtime-capabilities"> Core Runtime Capabilities</a></li>
-        <li><a href="#parsing-&-linearization">Parsing & Linearization</a></li>
-        <li><a href="#pgf-support">PGF Support</a></li>
-        <li><a href="#json-integration">JSON Integration</a></li>
+        <li><a href="#-core-runtime-capabilities"> Core Runtime Capabilities</a></li>
+        <li><a href="#-parsing-&-linearization">Parsing & Linearization</a></li>
+        <li><a href="#-pgf-support">PGF Support</a></li>
+        <li><a href="#-json-integration">JSON Integration</a></li>
       </ul>
-    <li><a href="#how-to-use"> How to Use</a></li>
-    <li><a href="#documentation"> Documentation</a></li>
-    <li><a href="#author"> Author</a></li>
-    <li><a href="#support"> Support</a>
-    <li><a href="#contributing"> Contributing</a></li>
-    <li><a href="#license">License</a></li>
+    <li><a href="#-how-to-use"> How to Use</a></li>
+    <li><a href="#-documentation"> Documentation</a></li>
+    <li><a href="#-author"> Author</a></li>
+    <li><a href="#-support"> Support</a>
+    <li><a href="#-contributing"> Contributing</a></li>
+    <li><a href="#-license">License</a></li>
     </li>
   </ol>
 </details>
